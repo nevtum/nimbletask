@@ -2,24 +2,19 @@ package todo
 
 import (
 	"errors"
-	"time"
+
+	gonanoid "github.com/matoous/go-nanoid/v2"
 )
 
-// generateID creates a simple unique ID (placeholder for NanoID)
+// generateID creates a unique ID using NanoID
 func generateID() string {
-	// Temporary simple ID generator
-	// TODO: Replace with actual NanoID implementation
-	return time.Now().Format("20060102150405") + randomString(6)
-}
-
-// randomString generates a random alphanumeric string of length n
-func randomString(n int) string {
-	const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	b := make([]byte, n)
-	for i := range b {
-		b[i] = letters[time.Now().UnixNano()%int64(len(letters))]
+	id, err := gonanoid.New()
+	if err != nil {
+		// Panic if NanoID fails
+		// This should be extremely rare
+		panic(err)
 	}
-	return string(b)
+	return id
 }
 
 // Add creates a new todo and adds it to the list
