@@ -26,255 +26,262 @@ func (tc *TestClock) Advance(d time.Duration) {
 
 // TestNewTodoList verifies that a new TodoList is properly initialized
 func TestNewTodoList(t *testing.T) {
-	tl := NewTodoList()
+	t.Run("initializes empty todo list", func(t *testing.T) {
+		tl := NewTodoList()
 
-	assert.NotNil(t, tl, "NewTodoList() returned nil")
-	assert.NotNil(t, tl.todos, "todos map not initialized")
-	assert.NotNil(t, tl.roots, "roots slice not initialized")
-	assert.False(t, tl.modified, "new list should not be marked as modified")
-	assert.Len(t, tl.todos, 0, "expected 0 todos")
-	assert.Len(t, tl.roots, 0, "expected 0 roots")
+		assert.NotNil(t, tl, "NewTodoList() returned nil")
+		assert.NotNil(t, tl.todos, "todos map not initialized")
+		assert.NotNil(t, tl.roots, "roots slice not initialized")
+		assert.False(t, tl.modified, "new list should not be marked as modified")
+		assert.Len(t, tl.todos, 0, "expected 0 todos")
+		assert.Len(t, tl.roots, 0, "expected 0 roots")
+	})
 }
 
 // TestTodoCreation verifies that a Todo struct can be created with all fields
 func TestTodoCreation(t *testing.T) {
-	now := time.Now()
-	due := now.Add(24 * time.Hour)
+	t.Run("creates todo with all fields", func(t *testing.T) {
+		now := time.Now()
+		due := now.Add(24 * time.Hour)
 
-	todo := &Todo{
-		ID:          "test-id",
-		Title:       "Test Todo",
-		Description: "Test Description",
-		Completed:   false,
-		CreatedAt:   now,
-		UpdatedAt:   now,
-		ParentID:    "",
-		Children:    []*Todo{},
-		Priority:    1,
-		DueDate:     &due,
-		Tags:        []string{"test", "todo"},
-	}
+		todo := &Todo{
+			ID:          "test-id",
+			Title:       "Test Todo",
+			Description: "Test Description",
+			Completed:   false,
+			CreatedAt:   now,
+			UpdatedAt:   now,
+			ParentID:    "",
+			Children:    []*Todo{},
+			Priority:    1,
+			DueDate:     &due,
+			Tags:        []string{"test", "todo"},
+		}
 
-	// TODO: Simplify with a validate method instead
-	assert.Equal(t, "test-id", todo.ID, "ID mismatch")
-	assert.Equal(t, "Test Todo", todo.Title, "Title mismatch")
-	assert.Equal(t, "Test Description", todo.Description, "Description mismatch")
-	assert.False(t, todo.Completed, "Expected Completed to be false")
-	assert.Equal(t, 1, todo.Priority, "Priority mismatch")
-	assert.Len(t, todo.Tags, 2, "Tags length mismatch")
+		// TODO: Simplify with a validate method instead
+		assert.Equal(t, "test-id", todo.ID, "ID mismatch")
+		assert.Equal(t, "Test Todo", todo.Title, "Title mismatch")
+		assert.Equal(t, "Test Description", todo.Description, "Description mismatch")
+		assert.False(t, todo.Completed, "Expected Completed to be false")
+		assert.Equal(t, 1, todo.Priority, "Priority mismatch")
+		assert.Len(t, todo.Tags, 2, "Tags length mismatch")
+	})
 }
 
-// TestAddRootTodo verifies adding a root-level todo
-func TestAddRootTodo(t *testing.T) {
-	tl := NewTodoList()
+// TestAddTodo verifies adding todos to the list
+func TestAddTodo(t *testing.T) {
+	t.Run("adds root-level todo", func(t *testing.T) {
+		tl := NewTodoList()
 
-	// TODO: Some functions could possibly be incorporated into
-	// a validate method instead
-	todo, err := tl.Add("Root Todo", "", -1)
-	assert.NoError(t, err, "Add failed")
-	assert.NotNil(t, todo, "Add returned nil todo")
-	assert.Equal(t, "Root Todo", todo.Title, "Title mismatch")
-	assert.Equal(t, "", todo.ParentID, "ParentID should be empty for root")
-	assert.NotEmpty(t, todo.ID, "Todo ID should not be empty")
-	assert.Len(t, tl.roots, 1, "Expected 1 root")
-	assert.Equal(t, todo.ID, tl.roots[0].ID, "Root todo not in roots slice")
-	assert.Contains(t, tl.todos, todo.ID, "Todo not in todos map")
-	assert.True(t, tl.modified, "List should be marked as modified after Add")
+		// TODO: Some functions could possibly be incorporated into
+		// a validate method instead
+		todo, err := tl.Add("Root Todo", "", -1)
+		assert.NoError(t, err, "Add failed")
+		assert.NotNil(t, todo, "Add returned nil todo")
+		assert.Equal(t, "Root Todo", todo.Title, "Title mismatch")
+		assert.Equal(t, "", todo.ParentID, "ParentID should be empty for root")
+		assert.NotEmpty(t, todo.ID, "Todo ID should not be empty")
+		assert.Len(t, tl.roots, 1, "Expected 1 root")
+		assert.Equal(t, todo.ID, tl.roots[0].ID, "Root todo not in roots slice")
+		assert.Contains(t, tl.todos, todo.ID, "Todo not in todos map")
+		assert.True(t, tl.modified, "List should be marked as modified after Add")
+	})
+
+	t.Run("adds child todo with parent", func(t *testing.T) {
+		tl := NewTodoList()
+
+		// Add parent first
+		parent, err := tl.Add("Parent", "", -1)
+		assert.NoError(t, err, "Failed to create parent")
+
+		// Reset modified flag
+		tl.modified = false
+
+		// Add child
+		child, err := tl.Add("Child", parent.ID, -1)
+		assert.NoError(t, err, "Failed to add child")
+		assert.Equal(t, parent.ID, child.ParentID, "Child ParentID mismatch")
+		assert.Len(t, parent.Children, 1, "Expected 1 child")
+		assert.Equal(t, child.ID, parent.Children[0].ID, "Child not in parent's Children slice")
+		assert.True(t, tl.modified, "List should be marked as modified after Add")
+	})
+
+	t.Run("returns error for non-existent parent", func(t *testing.T) {
+		tl := NewTodoList()
+
+		_, err := tl.Add("Child", "non-existent-id", -1)
+		assert.Error(t, err, "Expected error when adding to non-existent parent")
+	})
+
+	t.Run("returns error for empty title", func(t *testing.T) {
+		tl := NewTodoList()
+
+		_, err := tl.Add("", "", -1)
+		assert.Error(t, err, "Expected error when adding todo with empty title")
+	})
+
+	t.Run("adds at position 0", func(t *testing.T) {
+		tl := NewTodoList()
+
+		// Add at position 0 (first)
+		todo1, _ := tl.Add("First", "", 0)
+
+		// Add at position 0 again (should become new first)
+		todo2, _ := tl.Add("New First", "", 0)
+
+		assert.Equal(t, todo2.ID, tl.roots[0].ID, "New todo should be at position 0")
+		assert.Equal(t, todo1.ID, tl.roots[1].ID, "Original todo should be at position 1")
+	})
+
+	t.Run("adds at end with position -1", func(t *testing.T) {
+		tl := NewTodoList()
+
+		todo1, _ := tl.Add("First", "", -1)
+		todo2, _ := tl.Add("Second", "", -1)
+		todo3, _ := tl.Add("Third", "", -1)
+
+		assert.Equal(t, todo1.ID, tl.roots[0].ID, "First should be at position 0")
+		assert.Equal(t, todo2.ID, tl.roots[1].ID, "Second should be at position 1")
+		assert.Equal(t, todo3.ID, tl.roots[2].ID, "Third should be at position 2")
+	})
+
+	// TODO: Add a test that inserts at other positions
+	// other than 0 and -1
 }
 
-// TestAddChildTodo verifies adding a todo with a parent
-func TestAddChildTodo(t *testing.T) {
-	tl := NewTodoList()
+// TestGetTodo verifies retrieving todos from the list
+func TestGetTodo(t *testing.T) {
+	t.Run("retrieves existing todo", func(t *testing.T) {
+		tl := NewTodoList()
+		todo, _ := tl.Add("Test", "", -1)
 
-	// Add parent first
-	parent, err := tl.Add("Parent", "", -1)
-	assert.NoError(t, err, "Failed to create parent")
+		retrieved, err := tl.Get(todo.ID)
+		assert.NoError(t, err, "Get failed")
+		assert.Equal(t, todo.ID, retrieved.ID, "Retrieved wrong todo")
+		assert.Equal(t, "Test", retrieved.Title, "Title mismatch")
+	})
 
-	// Reset modified flag
-	tl.modified = false
+	t.Run("returns error for non-existent todo", func(t *testing.T) {
+		tl := NewTodoList()
 
-	// Add child
-	child, err := tl.Add("Child", parent.ID, -1)
-	assert.NoError(t, err, "Failed to add child")
-	assert.Equal(t, parent.ID, child.ParentID, "Child ParentID mismatch")
-	assert.Len(t, parent.Children, 1, "Expected 1 child")
-	assert.Equal(t, child.ID, parent.Children[0].ID, "Child not in parent's Children slice")
-	assert.True(t, tl.modified, "List should be marked as modified after Add")
-}
-
-// TestAddInvalidParent verifies error when adding to non-existent parent
-func TestAddInvalidParent(t *testing.T) {
-	tl := NewTodoList()
-
-	_, err := tl.Add("Child", "non-existent-id", -1)
-	assert.Error(t, err, "Expected error when adding to non-existent parent")
-}
-
-// TestAddEmptyTitle verifies error when adding with empty title
-func TestAddEmptyTitle(t *testing.T) {
-	tl := NewTodoList()
-
-	_, err := tl.Add("", "", -1)
-	assert.Error(t, err, "Expected error when adding todo with empty title")
-}
-
-// TestGetExistingTodo verifies retrieving an existing todo
-func TestGetExistingTodo(t *testing.T) {
-	tl := NewTodoList()
-	todo, _ := tl.Add("Test", "", -1)
-
-	retrieved, err := tl.Get(todo.ID)
-	assert.NoError(t, err, "Get failed")
-	assert.Equal(t, todo.ID, retrieved.ID, "Retrieved wrong todo")
-	assert.Equal(t, "Test", retrieved.Title, "Title mismatch")
-}
-
-// TestGetNonExistentTodo verifies error for non-existent todo
-func TestGetNonExistentTodo(t *testing.T) {
-	tl := NewTodoList()
-
-	_, err := tl.Get("non-existent-id")
-	assert.Error(t, err, "Expected error when getting non-existent todo")
+		_, err := tl.Get("non-existent-id")
+		assert.Error(t, err, "Expected error when getting non-existent todo")
+	})
 }
 
 // TestUpdateTodo verifies updating todo fields with deterministic clock
 func TestUpdateTodo(t *testing.T) {
-	// Use a fixed time for deterministic testing
-	startTime := time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
-	clock := NewTestClock(startTime)
-	tl := NewTodoListWithClock(clock)
+	t.Run("updates all fields successfully", func(t *testing.T) {
+		// Use a fixed time for deterministic testing
+		startTime := time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
+		clock := NewTestClock(startTime)
+		tl := NewTodoListWithClock(clock)
 
-	todo, _ := tl.Add("Original", "", -1)
-	originalID := todo.ID
+		todo, _ := tl.Add("Original", "", -1)
+		originalID := todo.ID
 
-	// Reset modified flag
-	tl.modified = false
-	originalUpdatedAt := todo.UpdatedAt
+		// Reset modified flag
+		tl.modified = false
+		originalUpdatedAt := todo.UpdatedAt
 
-	// Advance clock deterministically
-	clock.Advance(1 * time.Second)
+		// Advance clock deterministically
+		clock.Advance(1 * time.Second)
 
-	newTitle := "Updated"
-	newDesc := "Updated Description"
-	newPriority := 2
-	newDue := clock.Now().Add(48 * time.Hour)
-	newTags := []string{"updated", "tags"}
+		newTitle := "Updated"
+		newDesc := "Updated Description"
+		newPriority := 2
+		newDue := clock.Now().Add(48 * time.Hour)
+		newTags := []string{"updated", "tags"}
 
-	updates := TodoUpdate{
-		Title:       &newTitle,
-		Description: &newDesc,
-		Priority:    &newPriority,
-		DueDate:     &newDue,
-		Tags:        newTags,
-	}
+		updates := TodoUpdate{
+			Title:       &newTitle,
+			Description: &newDesc,
+			Priority:    &newPriority,
+			DueDate:     &newDue,
+			Tags:        newTags,
+		}
 
-	updated, err := tl.Update(todo.ID, updates)
-	assert.NoError(t, err, "Update failed")
-	assert.Equal(t, originalID, updated.ID, "ID should not change on update")
-	assert.Equal(t, "Updated", updated.Title, "Title not updated")
-	assert.Equal(t, "Updated Description", updated.Description, "Description not updated")
-	assert.Equal(t, 2, updated.Priority, "Priority not updated")
-	assert.True(t, updated.UpdatedAt.After(originalUpdatedAt), "UpdatedAt should be updated")
-	assert.Equal(t, startTime.Add(1*time.Second), updated.UpdatedAt, "UpdatedAt should match clock")
-	assert.True(t, tl.modified, "List should be marked as modified after Update")
+		updated, err := tl.Update(todo.ID, updates)
+		assert.NoError(t, err, "Update failed")
+		assert.Equal(t, originalID, updated.ID, "ID should not change on update")
+		assert.Equal(t, "Updated", updated.Title, "Title not updated")
+		assert.Equal(t, "Updated Description", updated.Description, "Description not updated")
+		assert.Equal(t, 2, updated.Priority, "Priority not updated")
+		assert.True(t, updated.UpdatedAt.After(originalUpdatedAt), "UpdatedAt should be updated")
+		assert.Equal(t, startTime.Add(1*time.Second), updated.UpdatedAt, "UpdatedAt should match clock")
+		assert.True(t, tl.modified, "List should be marked as modified after Update")
+	})
+
+	t.Run("returns error for non-existent todo", func(t *testing.T) {
+		tl := NewTodoList()
+		newTitle := "New"
+		updates := TodoUpdate{Title: &newTitle}
+
+		_, err := tl.Update("non-existent", updates)
+		assert.Error(t, err, "Expected error when updating non-existent todo")
+	})
 }
 
-// TestUpdateNonExistentTodo verifies error when updating non-existent todo
-func TestUpdateNonExistentTodo(t *testing.T) {
-	tl := NewTodoList()
-	newTitle := "New"
-	updates := TodoUpdate{Title: &newTitle}
+// TestDeleteTodo verifies deleting todos from the list
+func TestDeleteTodo(t *testing.T) {
+	t.Run("deletes root-level todo", func(t *testing.T) {
+		tl := NewTodoList()
+		todo, _ := tl.Add("To Delete", "", -1)
+		id := todo.ID
 
-	_, err := tl.Update("non-existent", updates)
-	assert.Error(t, err, "Expected error when updating non-existent todo")
-}
+		// Reset modified flag
+		tl.modified = false
 
-// TestDeleteRootTodo verifies deleting a root-level todo
-func TestDeleteRootTodo(t *testing.T) {
-	tl := NewTodoList()
-	todo, _ := tl.Add("To Delete", "", -1)
-	id := todo.ID
+		err := tl.Delete(id)
+		assert.NoError(t, err, "Delete failed")
+		assert.Len(t, tl.roots, 0, "Expected 0 roots")
+		assert.NotContains(t, tl.todos, id, "Todo still exists in map after deletion")
+		assert.True(t, tl.modified, "List should be marked as modified after Delete")
+	})
 
-	// Reset modified flag
-	tl.modified = false
+	t.Run("deletes child todo", func(t *testing.T) {
+		tl := NewTodoList()
+		parent, _ := tl.Add("Parent", "", -1)
+		child, _ := tl.Add("Child", parent.ID, -1)
 
-	err := tl.Delete(id)
-	assert.NoError(t, err, "Delete failed")
-	assert.Len(t, tl.roots, 0, "Expected 0 roots")
-	assert.NotContains(t, tl.todos, id, "Todo still exists in map after deletion")
-	assert.True(t, tl.modified, "List should be marked as modified after Delete")
-}
+		err := tl.Delete(child.ID)
+		assert.NoError(t, err, "Delete failed")
+		assert.Len(t, parent.Children, 0, "Expected 0 children")
+		assert.NotContains(t, tl.todos, child.ID, "Child still exists in map after deletion")
+	})
 
-// TestDeleteChildTodo verifies deleting a child todo
-func TestDeleteChildTodo(t *testing.T) {
-	tl := NewTodoList()
-	parent, _ := tl.Add("Parent", "", -1)
-	child, _ := tl.Add("Child", parent.ID, -1)
+	t.Run("returns error for non-existent todo", func(t *testing.T) {
+		tl := NewTodoList()
 
-	err := tl.Delete(child.ID)
-	assert.NoError(t, err, "Delete failed")
-	assert.Len(t, parent.Children, 0, "Expected 0 children")
-	assert.NotContains(t, tl.todos, child.ID, "Child still exists in map after deletion")
-}
-
-// TestDeleteNonExistentTodo verifies error when deleting non-existent todo
-func TestDeleteNonExistentTodo(t *testing.T) {
-	tl := NewTodoList()
-
-	err := tl.Delete("non-existent")
-	assert.Error(t, err, "Expected error when deleting non-existent todo")
+		err := tl.Delete("non-existent")
+		assert.Error(t, err, "Expected error when deleting non-existent todo")
+	})
 }
 
 // TestGetRoots verifies retrieving all root todos
 func TestGetRoots(t *testing.T) {
-	tl := NewTodoList()
+	t.Run("retrieves all root todos", func(t *testing.T) {
+		tl := NewTodoList()
 
-	// Add multiple roots
-	tl.Add("Root 1", "", -1)
-	tl.Add("Root 2", "", -1)
-	tl.Add("Root 3", "", -1)
+		// Add multiple roots
+		tl.Add("Root 1", "", -1)
+		tl.Add("Root 2", "", -1)
+		tl.Add("Root 3", "", -1)
 
-	roots := tl.GetRoots()
-	assert.Len(t, roots, 3, "Expected 3 roots")
+		roots := tl.GetRoots()
+		assert.Len(t, roots, 3, "Expected 3 roots")
+	})
 }
 
 // TestGetChildren verifies retrieving children of a todo
 func TestGetChildren(t *testing.T) {
-	tl := NewTodoList()
-	parent, _ := tl.Add("Parent", "", -1)
-	tl.Add("Child 1", parent.ID, -1)
-	tl.Add("Child 2", parent.ID, -1)
+	t.Run("retrieves children of a todo", func(t *testing.T) {
+		tl := NewTodoList()
+		parent, _ := tl.Add("Parent", "", -1)
+		tl.Add("Child 1", parent.ID, -1)
+		tl.Add("Child 2", parent.ID, -1)
 
-	children := tl.GetChildren(parent.ID)
-	assert.Len(t, children, 2, "Expected 2 children")
+		children := tl.GetChildren(parent.ID)
+		assert.Len(t, children, 2, "Expected 2 children")
+	})
 }
-
-// TestAddAtPosition verifies adding todos at specific positions
-func TestAddAtPosition(t *testing.T) {
-	tl := NewTodoList()
-
-	// Add at position 0 (first)
-	todo1, _ := tl.Add("First", "", 0)
-
-	// Add at position 0 again (should become new first)
-	todo2, _ := tl.Add("New First", "", 0)
-
-	assert.Equal(t, todo2.ID, tl.roots[0].ID, "New todo should be at position 0")
-	assert.Equal(t, todo1.ID, tl.roots[1].ID, "Original todo should be at position 1")
-}
-
-// TestAddAtEnd verifies adding todos at the end (position -1)
-func TestAddAtEnd(t *testing.T) {
-	tl := NewTodoList()
-
-	todo1, _ := tl.Add("First", "", -1)
-	todo2, _ := tl.Add("Second", "", -1)
-	todo3, _ := tl.Add("Third", "", -1)
-
-	assert.Equal(t, todo1.ID, tl.roots[0].ID, "First should be at position 0")
-	assert.Equal(t, todo2.ID, tl.roots[1].ID, "Second should be at position 1")
-	assert.Equal(t, todo3.ID, tl.roots[2].ID, "Third should be at position 2")
-}
-
-// TODO: Add a test that inserts at other positions
-// other than 0 and -1
