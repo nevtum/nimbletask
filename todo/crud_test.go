@@ -272,3 +272,86 @@ func TestGetChildren(t *testing.T) {
 		assert.Len(t, children, 2, "Expected 2 children")
 	})
 }
+
+// TestComplete verifies completing a todo
+func TestComplete(t *testing.T) {
+	t.Run("completes a root todo", func(t *testing.T) {
+		tl := NewTodoList()
+		todo, _ := tl.Add("Root Todo", "", -1)
+
+		// Reset modified flag
+		tl.modified = false
+
+		err := tl.Complete(todo.ID)
+		assert.NoError(t, err, "Complete failed")
+		assert.True(t, todo.Completed, "Todo should be marked as completed")
+		assert.True(t, tl.modified, "List should be marked as modified after Complete")
+		assertValid(t, tl)
+	})
+
+	t.Run("completes a child todo", func(t *testing.T) {
+		tl := NewTodoList()
+		parent, _ := tl.Add("Parent", "", -1)
+		child, _ := tl.Add("Child", parent.ID, -1)
+
+		// Reset modified flag
+		tl.modified = false
+
+		err := tl.Complete(child.ID)
+		assert.NoError(t, err, "Complete failed")
+		assert.True(t, child.Completed, "Child should be marked as completed")
+		assert.True(t, tl.modified, "List should be marked as modified after Complete")
+		assertValid(t, tl)
+	})
+
+	t.Run("returns error for non-existent todo", func(t *testing.T) {
+		tl := NewTodoList()
+
+		err := tl.Complete("non-existent-id")
+		assert.Error(t, err, "Expected error when completing non-existent todo")
+	})
+
+	t.Run("updates UpdatedAt timestamp", func(t *testing.T) {
+		startTime := time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
+		clock := NewTestClock(startTime)
+		tl := NewTodoList(withClock(clock))
+
+		todo, _ := tl.Add("Test Todo", "", -1)
+		originalUpdatedAt := todo.UpdatedAt
+
+		// Reset modified flag
+		tl.modified = false
+
+		// Advance clock
+		clock.Advance(1 * time.Hour)
+
+		err := tl.Complete(todo.ID)
+		assert.NoError(t, err, "Complete failed")
+		assert.True(t, todo.UpdatedAt.After(originalUpdatedAt), "UpdatedAt should be updated")
+		assert.Equal(t, clock.Now(), todo.UpdatedAt, "UpdatedAt should match current clock time")
+		assert.True(t, tl.modified, "List should be marked as modified")
+		assertValid(t, tl)
+	})
+
+	t.Run("idempotent - completing already completed todo", func(t *testing.T) {
+		tl := NewTodoList()
+		todo, _ := tl.Add("Test Todo", "", -1)
+
+		// Complete once
+		err := tl.Complete(todo.ID)
+		assert.NoError(t, err, "First Complete failed")
+		assert.True(t, todo.Completed, "Todo should be completed after first call")
+
+		// Reset modified flag to test if second call sets it again
+		tl.modified = false
+		originalUpdatedAt := todo.UpdatedAt
+
+		// Complete again
+		err = tl.Complete(todo.ID)
+		assert.NoError(t, err, "Second Complete failed")
+		assert.True(t, todo.Completed, "Todo should still be completed")
+		assert.True(t, tl.modified, "List should be marked as modified on second Complete")
+		assert.True(t, todo.UpdatedAt.After(originalUpdatedAt), "UpdatedAt should be updated on second Complete")
+		assertValid(t, tl)
+	})
+}

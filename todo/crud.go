@@ -126,7 +126,15 @@ func (tl *TodoList) Delete(id string) error {
 }
 
 func (tl *TodoList) Complete(id string) error {
-	return errors.New("not yet implemented")
+	todo, err := tl.Get(id)
+	if err != nil {
+		return err
+	}
+
+	todo.Completed = true
+	todo.UpdatedAt = tl.clock.Now()
+	tl.modified = true
+	return nil
 }
 
 // GetRoots returns all root-level todos
