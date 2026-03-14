@@ -24,6 +24,12 @@ func (tc *TestClock) Advance(d time.Duration) {
 	tc.current = tc.current.Add(d)
 }
 
+// assertValid is a helper to check TodoList structural integrity
+func assertValid(t *testing.T, tl *TodoList) {
+	t.Helper()
+	assert.NoError(t, tl.Validate(), "TodoList should be structurally valid")
+}
+
 // TestNewTodoList verifies that a new TodoList is properly initialized
 func TestNewTodoList(t *testing.T) {
 	t.Run("initializes empty todo list", func(t *testing.T) {
@@ -35,6 +41,7 @@ func TestNewTodoList(t *testing.T) {
 		assert.False(t, tl.modified, "new list should not be marked as modified")
 		assert.Len(t, tl.todos, 0, "expected 0 todos")
 		assert.Len(t, tl.roots, 0, "expected 0 roots")
+		assertValid(t, tl)
 	})
 }
 
@@ -73,18 +80,14 @@ func TestAddTodo(t *testing.T) {
 	t.Run("adds root-level todo", func(t *testing.T) {
 		tl := NewTodoList()
 
-		// TODO: Some functions could possibly be incorporated into
-		// a validate method instead
 		todo, err := tl.Add("Root Todo", "", -1)
 		assert.NoError(t, err, "Add failed")
 		assert.NotNil(t, todo, "Add returned nil todo")
 		assert.Equal(t, "Root Todo", todo.Title, "Title mismatch")
 		assert.Equal(t, "", todo.ParentID, "ParentID should be empty for root")
 		assert.NotEmpty(t, todo.ID, "Todo ID should not be empty")
-		assert.Len(t, tl.roots, 1, "Expected 1 root")
-		assert.Equal(t, todo.ID, tl.roots[0].ID, "Root todo not in roots slice")
-		assert.Contains(t, tl.todos, todo.ID, "Todo not in todos map")
 		assert.True(t, tl.modified, "List should be marked as modified after Add")
+		assertValid(t, tl)
 	})
 
 	t.Run("adds child todo with parent", func(t *testing.T) {
@@ -101,9 +104,8 @@ func TestAddTodo(t *testing.T) {
 		child, err := tl.Add("Child", parent.ID, -1)
 		assert.NoError(t, err, "Failed to add child")
 		assert.Equal(t, parent.ID, child.ParentID, "Child ParentID mismatch")
-		assert.Len(t, parent.Children, 1, "Expected 1 child")
-		assert.Equal(t, child.ID, parent.Children[0].ID, "Child not in parent's Children slice")
 		assert.True(t, tl.modified, "List should be marked as modified after Add")
+		assertValid(t, tl)
 	})
 
 	t.Run("returns error for non-existent parent", func(t *testing.T) {
@@ -237,6 +239,7 @@ func TestDeleteTodo(t *testing.T) {
 		assert.Len(t, tl.roots, 0, "Expected 0 roots")
 		assert.NotContains(t, tl.todos, id, "Todo still exists in map after deletion")
 		assert.True(t, tl.modified, "List should be marked as modified after Delete")
+		assertValid(t, tl)
 	})
 
 	t.Run("deletes child todo", func(t *testing.T) {
@@ -248,6 +251,7 @@ func TestDeleteTodo(t *testing.T) {
 		assert.NoError(t, err, "Delete failed")
 		assert.Len(t, parent.Children, 0, "Expected 0 children")
 		assert.NotContains(t, tl.todos, child.ID, "Child still exists in map after deletion")
+		assertValid(t, tl)
 	})
 
 	t.Run("returns error for non-existent todo", func(t *testing.T) {
