@@ -213,12 +213,6 @@ func (tl *TodoList) Reorder(id string, newPosition int) error {
 	// Remove from current position
 	slice = append(slice[:currentPos], slice[currentPos+1:]...)
 
-	// Adjust position if moving to a higher index
-	// (because removal shifted elements down)
-	if newPosition > currentPos {
-		newPosition--
-	}
-
 	// Insert at new position
 	result := make([]*Todo, 0, len(slice)+1)
 	result = append(result, slice[:newPosition]...)
