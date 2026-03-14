@@ -46,22 +46,26 @@ type TodoUpdate struct {
 	Tags        []string
 }
 
+// Option is a function that modifies a TodoList
+type Option func(*TodoList)
+
+// WithClock sets the clock for the todo list (for testing)
+func WithClock(clock Clock) Option {
+	return func(tl *TodoList) {
+		tl.clock = clock
+	}
+}
+
 // NewTodoList creates a new empty todo list
-func NewTodoList() *TodoList {
-	return &TodoList{
+func NewTodoList(options ...Option) *TodoList {
+	tl := &TodoList{
 		todos:    make(map[string]*Todo),
 		roots:    []*Todo{},
 		modified: false,
 		clock:    RealClock{},
 	}
-}
-
-// NewTodoListWithClock creates a todo list with a custom clock (for testing)
-func NewTodoListWithClock(clock Clock) *TodoList {
-	return &TodoList{
-		todos:    make(map[string]*Todo),
-		roots:    []*Todo{},
-		modified: false,
-		clock:    clock,
+	for _, opt := range options {
+		opt(tl)
 	}
+	return tl
 }

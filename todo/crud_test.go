@@ -177,7 +177,7 @@ func TestUpdateTodo(t *testing.T) {
 		// Use a fixed time for deterministic testing
 		startTime := time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
 		clock := NewTestClock(startTime)
-		tl := NewTodoListWithClock(clock)
+		tl := NewTodoList(WithClock(clock))
 
 		todo, _ := tl.Add("Original", "", -1)
 		originalID := todo.ID
