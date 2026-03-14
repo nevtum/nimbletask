@@ -7,25 +7,20 @@ import (
 // Move moves a todo to a new parent with the specified position
 // Position: 0 = first, -1 = append, otherwise specific index
 func (tl *TodoList) Move(id string, newParentID string, position int) error {
+	// Validate the move using CanMove
+	canMove, err := tl.CanMove(id, newParentID)
+	if err != nil {
+		return err
+	}
+	if !canMove {
+		// Get specific error message for why move is invalid (cycle)
+		return tl.checkCycle(id, newParentID)
+	}
+
 	// Get the todo to move
 	todo, err := tl.Get(id)
 	if err != nil {
 		return err
-	}
-
-	// Validate new parent exists if specified
-	if newParentID != "" {
-		_, err = tl.Get(newParentID)
-		if err != nil {
-			return err
-		}
-	}
-
-	// Check for cycles - cannot move under itself or any of its descendants
-	if newParentID != "" {
-		if err := tl.checkCycle(id, newParentID); err != nil {
-			return err
-		}
 	}
 
 	// Check if this is a no-op (same parent and position)
