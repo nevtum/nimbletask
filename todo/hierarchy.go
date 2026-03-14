@@ -28,6 +28,46 @@ func (tl *TodoList) Move(id string, newParentID string, position int) error {
 		}
 	}
 
+	// Check if this is a no-op (same parent and position)
+	if todo.ParentID == newParentID {
+		// Get the slice to check position
+		var slice []*Todo
+		if todo.ParentID != "" {
+			parent, _ := tl.Get(todo.ParentID)
+			slice = parent.Children
+		} else {
+			slice = tl.roots
+		}
+
+		// Find current position
+		currentPos := -1
+		for i, t := range slice {
+			if t.ID == todo.ID {
+				currentPos = i
+				break
+			}
+		}
+
+		// Check if position would result in same placement
+		if currentPos != -1 {
+			isNoOp := false
+			if position == -1 && currentPos == len(slice)-1 {
+				// Already at end (append position)
+				isNoOp = true
+			} else if position == 0 && currentPos == 0 {
+				// Already at beginning
+				isNoOp = true
+			} else if position == currentPos {
+				// Already at specific position
+				isNoOp = true
+			}
+
+			if isNoOp {
+				return nil
+			}
+		}
+	}
+
 	// Remove from current parent
 	if todo.ParentID != "" {
 		parent, _ := tl.Get(todo.ParentID)
@@ -119,8 +159,7 @@ func (tl *TodoList) Promote(id string) error {
 }
 
 // Demote moves a todo under a sibling
-// Position: 0 = beginning, -1 = end (default)
-func (tl *TodoList) Demote(id string, siblingID string, position ...int) error {
+func (tl *TodoList) Demote(id string, siblingID string) error {
 	todo, err := tl.Get(id)
 	if err != nil {
 		return err
@@ -153,14 +192,8 @@ func (tl *TodoList) Demote(id string, siblingID string, position ...int) error {
 	// Move under sibling
 	todo.ParentID = siblingID
 
-	// Determine position (default to -1 = end if not specified)
-	pos := -1
-	if len(position) > 0 {
-		pos = position[0]
-	}
-
-	// Insert at specified position
-	sibling.Children = insertAtPosition(sibling.Children, todo, pos)
+	// Insert at end (append)
+	sibling.Children = insertAtPosition(sibling.Children, todo, -1)
 
 	tl.modified = true
 	return nil
@@ -206,7 +239,6 @@ func (tl *TodoList) Reorder(id string, newPosition int) error {
 
 	// No change needed
 	if currentPos == newPosition {
-		tl.modified = true
 		return nil
 	}
 

@@ -78,8 +78,7 @@ func TestMove(t *testing.T) {
 		err := tl.Move(child.ID, parent.ID, -1)
 
 		assert.NoError(t, err)
-		// Should still mark as modified even if no-op? Let's say yes for consistency
-		assert.True(t, tl.modified)
+		assert.False(t, tl.modified)
 	})
 
 	t.Run("returns error for non-existent todo", func(t *testing.T) {
@@ -200,7 +199,7 @@ func TestDemote(t *testing.T) {
 
 		tl.modified = false
 
-		err := tl.Demote(todo.ID, sibling.ID, -1)
+		err := tl.Demote(todo.ID, sibling.ID)
 
 		assert.NoError(t, err)
 		assert.Equal(t, sibling.ID, todo.ParentID)
@@ -216,7 +215,7 @@ func TestDemote(t *testing.T) {
 		_, _ = tl.Add("Sibling2", "", -1) // Ensure multiple siblings exist
 		todo, _ := tl.Add("Todo", "", -1)
 
-		err := tl.Demote(todo.ID, sibling.ID, 0)
+		err := tl.Demote(todo.ID, sibling.ID)
 
 		assert.NoError(t, err)
 		assert.Equal(t, sibling.ID, todo.ParentID)
@@ -230,7 +229,7 @@ func TestDemote(t *testing.T) {
 		sibling, _ := tl.Add("Sibling", parent.ID, -1)
 		todo, _ := tl.Add("Todo", parent.ID, -1)
 
-		err := tl.Demote(todo.ID, sibling.ID, -1)
+		err := tl.Demote(todo.ID, sibling.ID)
 
 		assert.NoError(t, err)
 		assert.Equal(t, sibling.ID, todo.ParentID)
@@ -242,7 +241,7 @@ func TestDemote(t *testing.T) {
 		tl := NewTodoListWithClock(NewTestClock(time.Now()))
 		sibling, _ := tl.Add("Sibling", "", -1)
 
-		err := tl.Demote("non-existent", sibling.ID, -1)
+		err := tl.Demote("non-existent", sibling.ID)
 
 		assert.Error(t, err)
 	})
@@ -251,16 +250,16 @@ func TestDemote(t *testing.T) {
 		tl := NewTodoListWithClock(NewTestClock(time.Now()))
 		todo, _ := tl.Add("Todo", "", -1)
 
-		err := tl.Demote(todo.ID, "non-existent", -1)
+		err := tl.Demote(todo.ID, "non-existent")
 
 		assert.Error(t, err)
 	})
 
-	t.Run("returns error when no sibling exists", func(t *testing.T) {
+	t.Run("returns error for non-existent sibling", func(t *testing.T) {
 		tl := NewTodoListWithClock(NewTestClock(time.Now()))
 		todo, _ := tl.Add("Todo", "", -1)
 
-		err := tl.Demote(todo.ID, "any-id", -1)
+		err := tl.Demote(todo.ID, "any-id")
 
 		assert.Error(t, err)
 	})
@@ -271,7 +270,7 @@ func TestDemote(t *testing.T) {
 		child, _ := tl.Add("Child", parent.ID, -1)
 		unrelated, _ := tl.Add("Unrelated", "", -1)
 
-		err := tl.Demote(child.ID, unrelated.ID, -1)
+		err := tl.Demote(child.ID, unrelated.ID)
 
 		assert.Error(t, err)
 	})
@@ -367,7 +366,6 @@ func TestReorder(t *testing.T) {
 		err := tl.Reorder(child.ID, 0)
 
 		assert.NoError(t, err)
-		// Should this mark as modified? Let's say yes for consistency
-		assert.True(t, tl.modified)
+		assert.False(t, tl.modified)
 	})
 }
