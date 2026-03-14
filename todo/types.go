@@ -4,16 +4,6 @@ import (
 	"time"
 )
 
-// Clock provides time functionality for testability
-type Clock interface {
-	Now() time.Time
-}
-
-// RealClock uses actual system time
-type RealClock struct{}
-
-func (RealClock) Now() time.Time { return time.Now() }
-
 // Todo represents a single task in the hierarchical todo list
 type Todo struct {
 	ID          string
@@ -48,13 +38,6 @@ type TodoUpdate struct {
 
 // Option is a function that modifies a TodoList
 type Option func(*TodoList)
-
-// WithClock sets the clock for the todo list (for testing)
-func WithClock(clock Clock) Option {
-	return func(tl *TodoList) {
-		tl.clock = clock
-	}
-}
 
 // NewTodoList creates a new empty todo list
 func NewTodoList(options ...Option) *TodoList {
