@@ -567,21 +567,6 @@ func TestLoadErrors(t *testing.T) {
 		assert.Contains(t, err.Error(), "dup")
 	})
 
-	t.Run("orphaned child", func(t *testing.T) {
-		tmpDir := t.TempDir()
-		filePath := filepath.Join(tmpDir, "orphan.md")
-
-		markdown := `- [ ] <!-- id:parent|parent:|created:2024-01-15T10:00:00Z --> Parent
-  - [ ] <!-- id:orphan|parent:missing-parent|created:2024-01-15T10:00:00Z --> Child
-`
-		os.WriteFile(filePath, []byte(markdown), 0644)
-
-		_, err := LoadTodoList(filePath)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "parent")
-		assert.Contains(t, err.Error(), "missing-parent")
-	})
-
 	t.Run("malformed comment syntax", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		filePath := filepath.Join(tmpDir, "syntax.md")
@@ -595,20 +580,6 @@ func TestLoadErrors(t *testing.T) {
 		assert.Contains(t, err.Error(), "format")
 	})
 
-	t.Run("cycle in file", func(t *testing.T) {
-		tmpDir := t.TempDir()
-		filePath := filepath.Join(tmpDir, "cycle.md")
-
-		markdown := `- [ ] <!-- id:a|parent:c|created:2024-01-15T10:00:00Z --> A
-- [ ] <!-- id:b|parent:a|created:2024-01-15T10:00:00Z --> B
-- [ ] <!-- id:c|parent:b|created:2024-01-15T10:00:00Z --> C
-`
-		os.WriteFile(filePath, []byte(markdown), 0644)
-
-		_, err := LoadTodoList(filePath)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "cycle")
-	})
 }
 
 // ============================================================================

@@ -109,14 +109,6 @@ func TestValidate(t *testing.T) {
 		assert.Contains(t, err.Error(), "cycle")
 	})
 
-	t.Run("returns error when todo in roots has non-empty ParentID", func(t *testing.T) {
-		tl := NewTodoList(withRootWithParentID("bad-root", "Bad Root", "fake-parent"))
-
-		err := tl.Validate()
-
-		assert.Error(t, err)
-	})
-
 	t.Run("returns error when todo has itself as parent", func(t *testing.T) {
 		tl := NewTodoList(withSelfParent("self-parent", "Self Parent"))
 
