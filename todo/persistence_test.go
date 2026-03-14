@@ -132,15 +132,15 @@ func TestSaveLoadRoundTrip(t *testing.T) {
 
 		child1, _ := tl1.Add("Child 1.1", root1.ID, -1)
 		child2, _ := tl1.Add("Child 1.2", root1.ID, -1)
-		child3, _ := tl1.Add("Child 2.1", root2.ID, -1)
+		_, _ = tl1.Add("Child 2.1", root2.ID, -1)
 
 		grand1, _ := tl1.Add("Grand 1.1.1", child1.ID, -1)
 		grand2, _ := tl1.Add("Grand 1.1.2", child1.ID, -1)
-		grand3, _ := tl1.Add("Grand 1.2.1", child2.ID, -1)
+		_, _ = tl1.Add("Grand 1.2.1", child2.ID, -1)
 
 		// Mix of field updates
 		due1 := startTime.Add(48 * time.Hour)
-		due2 := startTime.Add(72 * time.Hour)
+		_ = startTime.Add(72 * time.Hour)
 		tl1.Update(child1.ID, TodoUpdate{Priority: intPtr(2), DueDate: &due1})
 		tl1.Update(child2.ID, TodoUpdate{Priority: intPtr(1)})
 		tl1.Update(grand1.ID, TodoUpdate{Tags: []string{"important"}})
@@ -183,8 +183,8 @@ func TestSaveLoadRoundTrip(t *testing.T) {
 		t1, _ := tl1.Add("Minimal", "", -1) // no optional fields
 		t2, _ := tl1.Add("With Bracket [Test]", "", -1)
 		t3, _ := tl1.Add("With Asterisk * Bold", "", -1)
-		t4, _ := tl1.Add("With Backtick `code`", "", -1)
-		t5, _ := tl1.Add("With Pipe | and Ampersand &", "", -1)
+		_, _ = tl1.Add("With Backtick `code`", "", -1)
+		_, _ = tl1.Add("With Pipe | and Ampersand &", "", -1)
 
 		// Zero priority (should be omitted)
 		tl1.Update(t1.ID, TodoUpdate{Priority: intPtr(0)})
@@ -310,7 +310,7 @@ func TestSaveFormat(t *testing.T) {
 		tl := NewTodoList()
 		parent, _ := tl.Add("Parent", "", -1)
 		child, _ := tl.Add("Child", parent.ID, -1)
-		grandchild, _ := tl.Add("Grandchild", child.ID, -1)
+		_, _ = tl.Add("Grandchild", child.ID, -1)
 
 		content := saveToString(t, tl)
 		lines := strings.Split(strings.TrimSpace(content), "\n")

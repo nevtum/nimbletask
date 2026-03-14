@@ -125,6 +125,10 @@ func (tl *TodoList) Delete(id string) error {
 	return nil
 }
 
+func (tl *TodoList) Complete(id string) error {
+	return errors.New("not yet implemented")
+}
+
 // GetRoots returns all root-level todos
 func (tl *TodoList) GetRoots() []*Todo {
 	return tl.roots
