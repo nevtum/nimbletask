@@ -201,17 +201,6 @@ func TestSaveLoadRoundTrip(t *testing.T) {
 		assertEqualTodoLists(t, tl1, tl2)
 	})
 
-	t.Run("modified flag is false after load", func(t *testing.T) {
-		tmpDir := t.TempDir()
-		filePath := filepath.Join(tmpDir, "mod-flag.md")
-
-		tl1 := NewTodoList()
-		tl1.Add("Task", "", -1)
-		tl1.Save(filePath)
-
-		tl2, _ := LoadTodoList(filePath)
-		assert.False(t, tl2.IsModified())
-	})
 }
 
 // ============================================================================
@@ -580,69 +569,6 @@ func TestLoadErrors(t *testing.T) {
 		assert.Contains(t, err.Error(), "format")
 	})
 
-}
-
-// ============================================================================
-// MODIFIED FLAG TESTS
-// ============================================================================
-
-func TestModifiedFlag(t *testing.T) {
-	t.Run("modified after add", func(t *testing.T) {
-		tl := NewTodoList()
-		assert.False(t, tl.IsModified())
-		tl.Add("Task", "", -1)
-		assert.True(t, tl.IsModified())
-	})
-
-	t.Run("modified after update", func(t *testing.T) {
-		tl := NewTodoList()
-		todo, _ := tl.Add("Task", "", -1)
-		tl.modified = false
-		tl.Update(todo.ID, TodoUpdate{Title: strPtr("New")})
-		assert.True(t, tl.IsModified())
-	})
-
-	t.Run("modified after delete", func(t *testing.T) {
-		tl := NewTodoList()
-		todo, _ := tl.Add("Task", "", -1)
-		tl.modified = false
-		tl.Delete(todo.ID)
-		assert.True(t, tl.IsModified())
-	})
-
-	t.Run("modified after move", func(t *testing.T) {
-		tl := NewTodoList()
-		parent, _ := tl.Add("Parent", "", -1)
-		child, _ := tl.Add("Child", "", -1)
-		tl.modified = false
-		tl.Move(child.ID, parent.ID, -1)
-		assert.True(t, tl.IsModified())
-	})
-
-	t.Run("not modified after save", func(t *testing.T) {
-		tmpDir := t.TempDir()
-		filePath := filepath.Join(tmpDir, "mod-save.md")
-
-		tl := NewTodoList()
-		tl.Add("Task", "", -1)
-		assert.True(t, tl.IsModified())
-
-		err := tl.Save(filePath)
-		assert.NoError(t, err)
-		assert.False(t, tl.IsModified())
-	})
-
-	t.Run("not modified after load", func(t *testing.T) {
-		tmpDir := t.TempDir()
-		filePath := filepath.Join(tmpDir, "mod-load.md")
-
-		tl1 := NewTodoList()
-		tl1.Add("Task", "", -1)
-		tl1.Save(filePath)
-
-		tl2, _ := LoadTodoList(filePath)
-		assert.False(t, tl2.IsModified())
-	})
 }
 
 // ============================================================================

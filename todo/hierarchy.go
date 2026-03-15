@@ -84,7 +84,6 @@ func (tl *TodoList) Move(id string, newParentID string, position int) error {
 		tl.roots = insertAtPosition(tl.roots, todo, position)
 	}
 
-	tl.modified = true
 	return nil
 }
 
@@ -149,7 +148,6 @@ func (tl *TodoList) Promote(id string) error {
 		tl.roots = append(tl.roots, todo)
 	}
 
-	tl.modified = true
 	return nil
 }
 
@@ -190,7 +188,6 @@ func (tl *TodoList) Demote(id string, siblingID string) error {
 	// Insert at end (append)
 	sibling.Children = insertAtPosition(sibling.Children, todo, -1)
 
-	tl.modified = true
 	return nil
 }
 
@@ -254,6 +251,5 @@ func (tl *TodoList) Reorder(id string, newPosition int) error {
 		tl.roots = result
 	}
 
-	tl.modified = true
 	return nil
 }

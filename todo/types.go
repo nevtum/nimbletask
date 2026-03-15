@@ -21,10 +21,9 @@ type Todo struct {
 
 // TodoList manages a collection of todos with O(1) lookup
 type TodoList struct {
-	todos    map[string]*Todo
-	roots    []*Todo
-	modified bool
-	clock    Clock
+	todos map[string]*Todo
+	roots []*Todo
+	clock Clock
 }
 
 // TodoUpdate represents update fields for a todo
@@ -42,10 +41,9 @@ type Option func(*TodoList)
 // NewTodoList creates a new empty todo list
 func NewTodoList(options ...Option) *TodoList {
 	tl := &TodoList{
-		todos:    make(map[string]*Todo),
-		roots:    []*Todo{},
-		modified: false,
-		clock:    RealClock{},
+		todos: make(map[string]*Todo),
+		roots: []*Todo{},
+		clock: RealClock{},
 	}
 	for _, opt := range options {
 		opt(tl)

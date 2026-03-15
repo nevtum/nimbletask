@@ -21,7 +21,6 @@ func TestNewTodoList(t *testing.T) {
 		assert.NotNil(t, tl, "NewTodoList() returned nil")
 		assert.NotNil(t, tl.todos, "todos map not initialized")
 		assert.NotNil(t, tl.roots, "roots slice not initialized")
-		assert.False(t, tl.modified, "new list should not be marked as modified")
 		assert.Len(t, tl.todos, 0, "expected 0 todos")
 		assert.Len(t, tl.roots, 0, "expected 0 roots")
 		assertValid(t, tl)
@@ -69,7 +68,6 @@ func TestAddTodo(t *testing.T) {
 		assert.Equal(t, "Root Todo", todo.Title, "Title mismatch")
 		assert.Equal(t, "", todo.ParentID, "ParentID should be empty for root")
 		assert.NotEmpty(t, todo.ID, "Todo ID should not be empty")
-		assert.True(t, tl.modified, "List should be marked as modified after Add")
 		assertValid(t, tl)
 	})
 
@@ -80,14 +78,10 @@ func TestAddTodo(t *testing.T) {
 		parent, err := tl.Add("Parent", "", -1)
 		assert.NoError(t, err, "Failed to create parent")
 
-		// Reset modified flag
-		tl.modified = false
-
 		// Add child
 		child, err := tl.Add("Child", parent.ID, -1)
 		assert.NoError(t, err, "Failed to add child")
 		assert.Equal(t, parent.ID, child.ParentID, "Child ParentID mismatch")
-		assert.True(t, tl.modified, "List should be marked as modified after Add")
 		assertValid(t, tl)
 	})
 
@@ -164,9 +158,6 @@ func TestUpdateTodo(t *testing.T) {
 
 		todo, _ := tl.Add("Original", "", -1)
 		originalID := todo.ID
-
-		// Reset modified flag
-		tl.modified = false
 		originalUpdatedAt := todo.UpdatedAt
 
 		// Advance clock deterministically
@@ -194,7 +185,6 @@ func TestUpdateTodo(t *testing.T) {
 		assert.Equal(t, 2, updated.Priority, "Priority not updated")
 		assert.True(t, updated.UpdatedAt.After(originalUpdatedAt), "UpdatedAt should be updated")
 		assert.Equal(t, startTime.Add(1*time.Second), updated.UpdatedAt, "UpdatedAt should match clock")
-		assert.True(t, tl.modified, "List should be marked as modified after Update")
 	})
 
 	t.Run("returns error for non-existent todo", func(t *testing.T) {
@@ -214,14 +204,10 @@ func TestDeleteTodo(t *testing.T) {
 		todo, _ := tl.Add("To Delete", "", -1)
 		id := todo.ID
 
-		// Reset modified flag
-		tl.modified = false
-
 		err := tl.Delete(id)
 		assert.NoError(t, err, "Delete failed")
 		assert.Len(t, tl.roots, 0, "Expected 0 roots")
 		assert.NotContains(t, tl.todos, id, "Todo still exists in map after deletion")
-		assert.True(t, tl.modified, "List should be marked as modified after Delete")
 		assertValid(t, tl)
 	})
 
@@ -279,13 +265,9 @@ func TestComplete(t *testing.T) {
 		tl := NewTodoList()
 		todo, _ := tl.Add("Root Todo", "", -1)
 
-		// Reset modified flag
-		tl.modified = false
-
 		err := tl.Complete(todo.ID)
 		assert.NoError(t, err, "Complete failed")
 		assert.True(t, todo.Completed, "Todo should be marked as completed")
-		assert.True(t, tl.modified, "List should be marked as modified after Complete")
 		assertValid(t, tl)
 	})
 
@@ -294,13 +276,9 @@ func TestComplete(t *testing.T) {
 		parent, _ := tl.Add("Parent", "", -1)
 		child, _ := tl.Add("Child", parent.ID, -1)
 
-		// Reset modified flag
-		tl.modified = false
-
 		err := tl.Complete(child.ID)
 		assert.NoError(t, err, "Complete failed")
 		assert.True(t, child.Completed, "Child should be marked as completed")
-		assert.True(t, tl.modified, "List should be marked as modified after Complete")
 		assertValid(t, tl)
 	})
 
@@ -319,9 +297,6 @@ func TestComplete(t *testing.T) {
 		todo, _ := tl.Add("Test Todo", "", -1)
 		originalUpdatedAt := todo.UpdatedAt
 
-		// Reset modified flag
-		tl.modified = false
-
 		// Advance clock
 		clock.Advance(1 * time.Hour)
 
@@ -329,7 +304,6 @@ func TestComplete(t *testing.T) {
 		assert.NoError(t, err, "Complete failed")
 		assert.True(t, todo.UpdatedAt.After(originalUpdatedAt), "UpdatedAt should be updated")
 		assert.Equal(t, clock.Now(), todo.UpdatedAt, "UpdatedAt should match current clock time")
-		assert.True(t, tl.modified, "List should be marked as modified")
 		assertValid(t, tl)
 	})
 
@@ -342,15 +316,12 @@ func TestComplete(t *testing.T) {
 		assert.NoError(t, err, "First Complete failed")
 		assert.True(t, todo.Completed, "Todo should be completed after first call")
 
-		// Reset modified flag to test if second call sets it again
-		tl.modified = false
 		originalUpdatedAt := todo.UpdatedAt
 
 		// Complete again
 		err = tl.Complete(todo.ID)
 		assert.NoError(t, err, "Second Complete failed")
 		assert.True(t, todo.Completed, "Todo should still be completed")
-		assert.True(t, tl.modified, "List should be marked as modified on second Complete")
 		assert.True(t, todo.UpdatedAt.After(originalUpdatedAt), "UpdatedAt should be updated on second Complete")
 		assertValid(t, tl)
 	})

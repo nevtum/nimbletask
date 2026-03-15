@@ -336,7 +336,6 @@ func LoadTodoList(path string) (*TodoList, error) {
 	// Build the TodoList
 	tl.todos = todos
 	tl.roots = roots
-	tl.modified = false
 
 	// Validate the loaded structure
 	if err := tl.Validate(); err != nil {

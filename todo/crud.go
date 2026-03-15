@@ -57,7 +57,6 @@ func (tl *TodoList) Add(title string, parentID string, position int) (*Todo, err
 		tl.roots = insertAtPosition(tl.roots, todo, position)
 	}
 
-	tl.modified = true
 	return todo, nil
 }
 
@@ -95,7 +94,6 @@ func (tl *TodoList) Update(id string, updates TodoUpdate) (*Todo, error) {
 	}
 
 	todo.UpdatedAt = tl.clock.Now()
-	tl.modified = true
 	return todo, nil
 }
 
@@ -121,7 +119,6 @@ func (tl *TodoList) Delete(id string) error {
 
 	// Remove from map
 	delete(tl.todos, id)
-	tl.modified = true
 	return nil
 }
 
@@ -133,7 +130,6 @@ func (tl *TodoList) Complete(id string) error {
 
 	todo.Completed = true
 	todo.UpdatedAt = tl.clock.Now()
-	tl.modified = true
 	return nil
 }
 
@@ -149,11 +145,6 @@ func (tl *TodoList) GetChildren(parentID string) []*Todo {
 		return []*Todo{}
 	}
 	return parent.Children
-}
-
-// IsModified returns whether the list has been modified
-func (tl *TodoList) IsModified() bool {
-	return tl.modified
 }
 
 // Helper functions
