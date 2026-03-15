@@ -417,8 +417,7 @@ func TestLoad(t *testing.T) {
 		tmpDir := t.TempDir()
 		filePath := filepath.Join(tmpDir, "timestamps.md")
 
-		markdown := `- [ ] <!-- id:ts|parent:|created:2020-05-01T12:00:00Z|updated:2020-05-02T13:00:00Z --> Timestamped Task
-`
+		markdown := `- [ ] <!-- id:ts|parent:|created:2020-05-01T12:00:00Z|updated:2020-05-02T13:00:00Z --> Timestamped Task`
 		os.WriteFile(filePath, []byte(markdown), 0644)
 
 		tl, err := LoadTodoList(filePath)
@@ -472,8 +471,7 @@ func TestLoad(t *testing.T) {
 		tmpDir := t.TempDir()
 		filePath := filepath.Join(tmpDir, "no-desc.md")
 
-		markdown := `- [ ] <!-- id:nodesc|parent:|created:2024-01-15T10:00:00Z --> Task
-`
+		markdown := `- [ ] <!-- id:nodesc|parent:|created:2024-01-15T10:00:00Z --> Task`
 		os.WriteFile(filePath, []byte(markdown), 0644)
 
 		tl, err := LoadTodoList(filePath)
@@ -493,8 +491,7 @@ func TestLoadErrors(t *testing.T) {
 		tmpDir := t.TempDir()
 		filePath := filepath.Join(tmpDir, "bad.md")
 
-		markdown := `- [ ] Task without metadata
-`
+		markdown := `- [ ] Task without metadata`
 		os.WriteFile(filePath, []byte(markdown), 0644)
 
 		_, err := LoadTodoList(filePath)
@@ -506,8 +503,7 @@ func TestLoadErrors(t *testing.T) {
 		tmpDir := t.TempDir()
 		filePath := filepath.Join(tmpDir, "bad-id.md")
 
-		markdown := `- [ ] <!-- id:|parent:|created:2024-01-15T10:00:00Z --> Task
-`
+		markdown := `- [ ] <!-- id:|parent:|created:2024-01-15T10:00:00Z --> Task`
 		os.WriteFile(filePath, []byte(markdown), 0644)
 
 		_, err := LoadTodoList(filePath)
@@ -519,21 +515,19 @@ func TestLoadErrors(t *testing.T) {
 		tmpDir := t.TempDir()
 		filePath := filepath.Join(tmpDir, "bad-time.md")
 
-		markdown := `- [ ] <!-- id:abc|parent:| --> Task
-`
+		markdown := `- [ ] <!-- id:abc|parent:| --> Task`
 		os.WriteFile(filePath, []byte(markdown), 0644)
 
 		_, err := LoadTodoList(filePath)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "created")
+		assert.Contains(t, err.Error(), "missing key-value separator")
 	})
 
 	t.Run("invalid date format", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		filePath := filepath.Join(tmpDir, "bad-date.md")
 
-		markdown := `- [ ] <!-- id:abc|parent:|created:not-a-date|completed:2024-01-15T10:00:00Z --> Task
-`
+		markdown := `- [ ] <!-- id:abc|parent:|created:not-a-date|completed:2024-01-15T10:00:00Z --> Task`
 		os.WriteFile(filePath, []byte(markdown), 0644)
 
 		_, err := LoadTodoList(filePath)
@@ -546,8 +540,7 @@ func TestLoadErrors(t *testing.T) {
 		filePath := filepath.Join(tmpDir, "dup.md")
 
 		markdown := `- [ ] <!-- id:dup|parent:|created:2024-01-15T10:00:00Z --> Task 1
-- [ ] <!-- id:dup|parent:|created:2024-01-15T10:00:00Z --> Task 2
-`
+	- [ ] <!-- id:dup|parent:|created:2024-01-15T10:00:00Z --> Task 2`
 		os.WriteFile(filePath, []byte(markdown), 0644)
 
 		_, err := LoadTodoList(filePath)
@@ -560,8 +553,7 @@ func TestLoadErrors(t *testing.T) {
 		tmpDir := t.TempDir()
 		filePath := filepath.Join(tmpDir, "syntax.md")
 
-		markdown := `- [ ] <!-- id:abc parent:|created:2024-01-15T10:00:00Z --> Task
-`
+		markdown := `- [ ] <!-- id:abc parent:|created:2024-01-15T10:00:00Z --> Task`
 		os.WriteFile(filePath, []byte(markdown), 0644)
 
 		_, err := LoadTodoList(filePath)

@@ -228,6 +228,9 @@ func LoadTodoList(path string) (*TodoList, error) {
 		// Parse each metadata key:value pair
 		hasCreated := false
 		for _, part := range metaParts {
+			if part == "" {
+				return nil, fmt.Errorf("%w: missing key-value separator", ErrInvalidMetadata)
+			}
 			kv := strings.SplitN(part, ":", 2)
 			if len(kv) != 2 {
 				return nil, fmt.Errorf("%w: malformed metadata format", ErrInvalidMetadata)
