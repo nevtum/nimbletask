@@ -1,9 +1,37 @@
 # Nested Todo CLI - Implementation Specification
 
+## Global Configuration
+
 ## Overview
 Build a Go CLI tool for managing hierarchical todo lists with native markdown persistence.
 
 ## Data Structure
+
+### Global Configuration File
+- The application supports a global configuration file located at `~/.todo/config.json`.
+- The configuration file contains:
+  - `todo_list_path`: Relative path to the markdown file for the todo list.
+  - `default_priority`: Default priority level for new todo items.
+
+### Initialization Command
+- A command `todo init-config` initializes the global configuration file.
+- This command creates the hidden directory `.todo` and generates a default `config.json`.
+
+### Loading Configuration
+- The application loads the global configuration at startup to determine the todo list path, relative to the directory where the command is executed, and default settings.
+- If the global configuration file does not exist, the user is prompted to initialize it.
+
+### Cross-Platform Compatibility
+- The implementation ensures that the global configuration works across Windows, macOS, and Linux.
+- Platform-independent methods are used for home directory retrieval and file path construction.
+
+### Command Modifications
+- All commands that modify the todo list reference the global configuration file for the path to create/update the todo list.
+- Default settings for new todos are retrieved from the global configuration.
+
+### Error Handling
+- The application handles errors gracefully when loading the configuration file or if the specified todo list path is invalid.
+- Appropriate error messages are displayed to the user.
 
 ### Core Types
 ```go

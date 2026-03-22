@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -32,30 +33,10 @@ var metadataRegex = regexp.MustCompile(`<!--\s*([^>]+?)\s*-->`)
 
 // Save serializes the TodoList to a markdown file
 func (tl *TodoList) Save(path string) error {
-	// Ensure directory exists
-	dir := filepath.Dir(path)
-	if dir != "" {
-		if err := os.MkdirAll(dir, 0755); err != nil {
-			return fmt.Errorf("failed to create directory: %w", err)
-		}
-	}
-
-	// Write to a temporary file first for atomicity
-	tmpPath := path + ".tmp"
-	f, err := os.Create(tmpPath)
+	f, err := tl.pathToWriter(path)
 	if err != nil {
 		return fmt.Errorf("failed to create temp file: %w", err)
 	}
-	defer func() {
-		f.Close()
-		// If we succeed, rename to final path; otherwise cleanup
-		if err == nil {
-			os.Rename(tmpPath, path)
-		} else {
-			os.Remove(tmpPath)
-		}
-	}()
-
 	writer := bufio.NewWriter(f)
 
 	// Recursively write todos
@@ -127,13 +108,7 @@ func (tl *TodoList) Save(path string) error {
 		return err
 	}
 
-	writer.Flush()
-	if err := f.Close(); err != nil {
-		return err
-	}
-
-	// Atomic rename
-	return os.Rename(tmpPath, path)
+	return writer.Flush()
 }
 
 // LoadTodoList loads a TodoList from a markdown file
@@ -346,4 +321,19 @@ func LoadTodoList(path string) (*TodoList, error) {
 	}
 
 	return tl, nil
+}
+
+func (tl *TodoList) pathToWriter(path string) (io.Writer, error) {
+	dir := filepath.Dir(path)
+	if dir != "" {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return nil, fmt.Errorf("failed to create directory: %w", err)
+		}
+	}
+
+	f, err := os.Create(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create temp file: %w", err)
+	}
+	return f, nil
 }
