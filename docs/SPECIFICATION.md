@@ -87,8 +87,8 @@ func (tl *TodoList) Validate() error
 func (tl *TodoList) CanMove(id, newParentID string) (bool, error)
 
 // Persistence
-func (tl *TodoList) Save(path string) error
-func (tl *TodoList) LoadFrom(path string) error
+func (tl *TodoList) Save(file *File) error
+func (tl *TodoList) Load(file *File) error
 ```
 
 ## Persistence Format

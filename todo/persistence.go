@@ -12,13 +12,11 @@ import (
 var metadataRegex = regexp.MustCompile(`<!--\s*([^>]+?)\s*-->`)
 
 // Save serializes the TodoList to a markdown file
-func (tl *TodoList) Save(path string) error {
-	file := NewFile(path)
+func (tl *TodoList) Save(file *File) error {
 	return file.Save(tl.serialize())
 }
 
-func (tl *TodoList) LoadFrom(path string) error {
-	file := NewFile(path)
+func (tl *TodoList) Load(file *File) error {
 	content, err := file.Load()
 	if err != nil {
 		if err == err.(FileDoesNotExist) {
