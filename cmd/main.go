@@ -3,6 +3,8 @@ package main
 import (
 	"os"
 	"path/filepath"
+
+	"todo_cli/todo"
 )
 
 func main() {
@@ -17,4 +19,20 @@ func runInitConfig(configRoot string) error {
 	}
 	configPath := filepath.Join(configDir, "config.json")
 	return os.WriteFile(configPath, []byte("{}"), 0644)
+}
+
+// runAdd creates a new todo and saves it to the todo list file
+func runAdd(configRoot string, title string, todoPath string) error {
+	// Create a new todo list
+	tl := todo.NewTodoList()
+
+	// Add the todo (no parent, append to end)
+	_, err := tl.Add(title, "", -1)
+	if err != nil {
+		return err
+	}
+
+	// Save to file
+	file := todo.NewFile(todoPath)
+	return tl.Save(file)
 }

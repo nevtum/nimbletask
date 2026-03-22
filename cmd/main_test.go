@@ -33,3 +33,64 @@ func TestInitConfig_CreatesConfigFile(t *testing.T) {
 	_, err = os.Stat(configPath)
 	assert.NoError(t, err, "config.json should be created")
 }
+
+// TestRunAdd is a table-driven test for the runAdd function.
+// It covers both happy path and error scenarios.
+func TestRunAdd(t *testing.T) {
+	tests := []struct {
+		name        string
+		title       string
+		wantErr     bool
+		errContains string
+		wantContent string
+	}{
+		{
+			name:        "creates todo with valid title",
+			title:       "Buy groceries",
+			wantErr:     false,
+			wantContent: "Buy groceries",
+		},
+		{
+			name:        "returns error for empty title",
+			title:       "",
+			wantErr:     true,
+			errContains: "title cannot be empty",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Use isolated temp directory
+			tmpDir := t.TempDir()
+
+			// Initialize config first (prerequisite)
+			err := runInitConfig(tmpDir)
+			require.NoError(t, err, "init-config should complete without error")
+
+			// Attempt to add todo
+			todoPath := filepath.Join(tmpDir, "todos.md")
+			err = runAdd(tmpDir, tt.title, todoPath)
+
+			// Verify error expectations
+			if tt.wantErr {
+				assert.Error(t, err, "add should return error")
+				if tt.errContains != "" {
+					assert.Contains(t, err.Error(), tt.errContains, "error message should contain expected text")
+				}
+				return
+			}
+
+			// Verify success expectations
+			require.NoError(t, err, "add should complete without error")
+
+			// Verify the todo list file exists
+			_, err = os.Stat(todoPath)
+			assert.NoError(t, err, "todo list file should be created")
+
+			// Verify the file contains the expected content
+			content, err := os.ReadFile(todoPath)
+			require.NoError(t, err, "should be able to read todo file")
+			assert.Contains(t, string(content), tt.wantContent, "todo file should contain expected content")
+		})
+	}
+}
