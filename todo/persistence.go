@@ -39,76 +39,81 @@ func (tl *TodoList) Save(path string) error {
 	}
 	writer := bufio.NewWriter(f)
 
-	// Recursively write todos
-	var writeTodos func([]*Todo, int) error
-	writeTodos = func(todos []*Todo, depth int) error {
-		for _, todo := range todos {
-			// Build checkbox
-			checkbox := "[ ]"
-			if todo.Completed {
-				checkbox = "[x]"
-			}
-
-			// Build indent
-			indent := strings.Repeat("  ", depth)
-
-			// Build metadata
-			metaParts := []string{
-				fmt.Sprintf("id:%s", todo.ID),
-				fmt.Sprintf("parent:%s", todo.ParentID),
-				fmt.Sprintf("created:%s", todo.CreatedAt.Format(time.RFC3339)),
-			}
-
-			if todo.Priority != 0 {
-				metaParts = append(metaParts, fmt.Sprintf("priority:%d", todo.Priority))
-			}
-			if todo.Completed {
-				metaParts = append(metaParts, fmt.Sprintf("completed:%s", todo.UpdatedAt.Format(time.RFC3339)))
-			}
-			if todo.DueDate != nil {
-				metaParts = append(metaParts, fmt.Sprintf("due:%s", todo.DueDate.Format(time.RFC3339)))
-			}
-			if len(todo.Tags) > 0 {
-				metaParts = append(metaParts, fmt.Sprintf("tags:%s", strings.Join(todo.Tags, ",")))
-			}
-
-			metadata := strings.Join(metaParts, "|")
-
-			// Write the todo line
-			line := fmt.Sprintf("%s- %s <!-- %s --> %s\n", indent, checkbox, metadata, todo.Title)
-			if _, err := writer.WriteString(line); err != nil {
-				return err
-			}
-
-			// Write description if present
-			if todo.Description != "" {
-				lines := strings.Split(todo.Description, "\n")
-				for _, lineText := range lines {
-					if trimmed := strings.TrimSpace(lineText); trimmed == "" {
-						continue // Skip empty lines in description
-					}
-					descLine := fmt.Sprintf("%s  %s\n", indent, lineText)
-					if _, err := writer.WriteString(descLine); err != nil {
-						return err
-					}
-				}
-			}
-
-			// Recursively write children
-			if len(todo.Children) > 0 {
-				if err := writeTodos(todo.Children, depth+1); err != nil {
-					return err
-				}
-			}
-		}
-		return nil
-	}
-
-	if err := writeTodos(tl.roots, 0); err != nil {
-		return err
+	if _, err := writer.WriteString(tl.serialize()); err != nil {
+		return fmt.Errorf("failed to write to buffer: %w", err)
 	}
 
 	return writer.Flush()
+}
+
+// serialize converts all todos in the list into their markdown string representation
+func (tl *TodoList) serialize() string {
+	var sb strings.Builder
+
+	for _, todo := range tl.roots {
+		sb.WriteString(tl.serializeTodo(todo, 0))
+	}
+
+	return sb.String()
+}
+
+// serializeTodo converts a single Todo and all its children into markdown string representation
+func (tl *TodoList) serializeTodo(todo *Todo, depth int) string {
+	var sb strings.Builder
+
+	// Build checkbox
+	checkbox := "[ ]"
+	if todo.Completed {
+		checkbox = "[x]"
+	}
+
+	// Build indent
+	indent := strings.Repeat("  ", depth)
+
+	// Build metadata
+	metaParts := []string{
+		fmt.Sprintf("id:%s", todo.ID),
+		fmt.Sprintf("parent:%s", todo.ParentID),
+		fmt.Sprintf("created:%s", todo.CreatedAt.Format(time.RFC3339)),
+	}
+
+	if todo.Priority != 0 {
+		metaParts = append(metaParts, fmt.Sprintf("priority:%d", todo.Priority))
+	}
+	if todo.Completed {
+		metaParts = append(metaParts, fmt.Sprintf("completed:%s", todo.UpdatedAt.Format(time.RFC3339)))
+	}
+	if todo.DueDate != nil {
+		metaParts = append(metaParts, fmt.Sprintf("due:%s", todo.DueDate.Format(time.RFC3339)))
+	}
+	if len(todo.Tags) > 0 {
+		metaParts = append(metaParts, fmt.Sprintf("tags:%s", strings.Join(todo.Tags, ",")))
+	}
+
+	metadata := strings.Join(metaParts, "|")
+
+	// Build the todo line
+	line := fmt.Sprintf("%s- %s <!-- %s --> %s\n", indent, checkbox, metadata, todo.Title)
+	sb.WriteString(line)
+
+	// Write description if present
+	if todo.Description != "" {
+		lines := strings.Split(todo.Description, "\n")
+		for _, lineText := range lines {
+			if trimmed := strings.TrimSpace(lineText); trimmed == "" {
+				continue // Skip empty lines in description
+			}
+			descLine := fmt.Sprintf("%s  %s\n", indent, lineText)
+			sb.WriteString(descLine)
+		}
+	}
+
+	// Recursively serialize children
+	for _, child := range todo.Children {
+		sb.WriteString(tl.serializeTodo(child, depth+1))
+	}
+
+	return sb.String()
 }
 
 // LoadTodoList loads a TodoList from a markdown file
