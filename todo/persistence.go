@@ -2,14 +2,10 @@ package todo
 
 import (
 	"fmt"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
 )
-
-// metadataRegex extracts key:value pairs from the HTML comment
-var metadataRegex = regexp.MustCompile(`<!--\s*([^>]+?)\s*-->`)
 
 // Save serializes the TodoList to a markdown file
 func (tl *TodoList) Save(file *File) error {
