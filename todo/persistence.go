@@ -33,9 +33,9 @@ var metadataRegex = regexp.MustCompile(`<!--\s*([^>]+?)\s*-->`)
 
 // Save serializes the TodoList to a markdown file
 func (tl *TodoList) Save(path string) error {
-	f, err := tl.pathToWriter(path)
+	f, err := pathToWriter(path)
 	if err != nil {
-		return fmt.Errorf("failed to create temp file: %w", err)
+		return fmt.Errorf("failed to establish writer: %w", err)
 	}
 	writer := bufio.NewWriter(f)
 
@@ -113,16 +113,11 @@ func (tl *TodoList) Save(path string) error {
 
 // LoadTodoList loads a TodoList from a markdown file
 func LoadTodoList(path string) (*TodoList, error) {
-	// If file doesn't exist, return empty list (per test behavior)
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	file, err := pathToReader(path)
+	if err != nil {
+		// If file doesn't exist, return empty list
 		return NewTodoList(), nil
 	}
-
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open file: %w", err)
-	}
-	defer file.Close()
 
 	tl := NewTodoList()
 	todos := make(map[string]*Todo)
@@ -323,7 +318,20 @@ func LoadTodoList(path string) (*TodoList, error) {
 	return tl, nil
 }
 
-func (tl *TodoList) pathToWriter(path string) (io.Writer, error) {
+func pathToReader(path string) (io.Reader, error) {
+	// If file doesn't exist, return empty list (per test behavior)
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return nil, fmt.Errorf("file does not exist: %w", err)
+	}
+
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open file: %w", err)
+	}
+	return file, nil
+}
+
+func pathToWriter(path string) (io.Writer, error) {
 	dir := filepath.Dir(path)
 	if dir != "" {
 		if err := os.MkdirAll(dir, 0755); err != nil {
