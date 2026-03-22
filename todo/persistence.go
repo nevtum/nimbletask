@@ -65,6 +65,17 @@ func LoadTodoList(path string) (*TodoList, error) {
 		return NewTodoList(), nil
 	}
 
+	// Read all content from the reader
+	content, err := io.ReadAll(file)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read file: %w", err)
+	}
+
+	return deserialize(string(content))
+}
+
+// deserialize parses the markdown content and returns a TodoList
+func deserialize(content string) (*TodoList, error) {
 	tl := NewTodoList()
 	todos := make(map[string]*Todo)
 	var roots []*Todo
@@ -74,11 +85,10 @@ func LoadTodoList(path string) (*TodoList, error) {
 	// Followed by HTML comment with metadata, then title
 	// Subsequent indented lines (2 spaces per level) are description or children
 
-	scanner := bufio.NewScanner(file)
+	lines := strings.Split(content, "\n")
 	var stack []*Todo // Stack to track parent-child relationships based on indentation
 
-	for scanner.Scan() {
-		line := scanner.Text()
+	for _, line := range lines {
 		if strings.TrimSpace(line) == "" {
 			continue
 		}
@@ -246,10 +256,6 @@ func LoadTodoList(path string) (*TodoList, error) {
 
 		// Push this todo onto stack
 		stack = append(stack, todo)
-	}
-
-	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("failed to read file: %w", err)
 	}
 
 	// Build the TodoList
