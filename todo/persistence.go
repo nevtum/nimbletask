@@ -1,31 +1,11 @@
 package todo
 
 import (
-	"bufio"
-	"errors"
 	"fmt"
-	"io"
-	"os"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
-)
-
-var (
-	// ErrInvalidMetadata is returned when metadata is missing or malformed
-	ErrInvalidMetadata = errors.New("invalid or missing metadata")
-	// ErrMissingID is returned when a todo has no ID
-	ErrMissingID = errors.New("todo missing required ID")
-	// ErrMissingCreated is returned when a todo has no created timestamp
-	ErrMissingCreated = errors.New("todo missing required created timestamp")
-	// ErrDuplicateID is returned when two todos have the same ID
-	ErrDuplicateID = fmt.Errorf("duplicate ID")
-	// ErrInvalidDateFormat is returned when a date cannot be parsed
-	ErrInvalidDateFormat = errors.New("invalid date format")
-	// ErrCycleDetected is returned when a cycle exists in the hierarchy
-	ErrCycleDetected = errors.New("cycle detected in hierarchy")
 )
 
 // metadataRegex extracts key:value pairs from the HTML comment
@@ -33,17 +13,22 @@ var metadataRegex = regexp.MustCompile(`<!--\s*([^>]+?)\s*-->`)
 
 // Save serializes the TodoList to a markdown file
 func (tl *TodoList) Save(path string) error {
-	f, err := pathToWriter(path)
+	file := NewFile(path)
+	return file.Save(tl.serialize())
+}
+
+// LoadTodoList loads a TodoList from a markdown file
+func LoadTodoList(path string) (*TodoList, error) {
+	file := NewFile(path)
+	content, err := file.Load()
 	if err != nil {
-		return fmt.Errorf("failed to establish writer: %w", err)
+		if err == err.(FileDoesNotExistError) {
+			return NewTodoList(), nil
+		} else {
+			return nil, err
+		}
 	}
-	writer := bufio.NewWriter(f)
-
-	if _, err := writer.WriteString(tl.serialize()); err != nil {
-		return fmt.Errorf("failed to write to buffer: %w", err)
-	}
-
-	return writer.Flush()
+	return deserialize(content)
 }
 
 // serialize converts all todos in the list into their markdown string representation
@@ -55,23 +40,6 @@ func (tl *TodoList) serialize() string {
 	}
 
 	return sb.String()
-}
-
-// LoadTodoList loads a TodoList from a markdown file
-func LoadTodoList(path string) (*TodoList, error) {
-	file, err := pathToReader(path)
-	if err != nil {
-		// If file doesn't exist, return empty list
-		return NewTodoList(), nil
-	}
-
-	// Read all content from the reader
-	content, err := io.ReadAll(file)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read file: %w", err)
-	}
-
-	return deserialize(string(content))
 }
 
 // deserialize parses the markdown content and returns a TodoList
@@ -268,32 +236,4 @@ func deserialize(content string) (*TodoList, error) {
 	}
 
 	return tl, nil
-}
-
-func pathToReader(path string) (io.Reader, error) {
-	// If file doesn't exist, return empty list (per test behavior)
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return nil, fmt.Errorf("file does not exist: %w", err)
-	}
-
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open file: %w", err)
-	}
-	return file, nil
-}
-
-func pathToWriter(path string) (io.Writer, error) {
-	dir := filepath.Dir(path)
-	if dir != "" {
-		if err := os.MkdirAll(dir, 0755); err != nil {
-			return nil, fmt.Errorf("failed to create directory: %w", err)
-		}
-	}
-
-	f, err := os.Create(path)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create temp file: %w", err)
-	}
-	return f, nil
 }
