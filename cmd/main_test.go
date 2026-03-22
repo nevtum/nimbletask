@@ -94,3 +94,31 @@ func TestRunAdd(t *testing.T) {
 		})
 	}
 }
+
+// TestCLI_AddCommand tests the CLI-level execution with command arguments.
+// It verifies that running "todo add Title" creates a todo in the list.
+func TestCLI_AddCommand(t *testing.T) {
+	// Use isolated temp directory
+	tmpDir := t.TempDir()
+
+	// Initialize config first (prerequisite)
+	err := runInitConfig(tmpDir)
+	require.NoError(t, err, "init-config should complete without error")
+
+	// Execute CLI command: todo add "Buy groceries"
+	args := []string{"add", "Buy groceries"}
+	err = runCLI(args, tmpDir)
+
+	// Should succeed without error
+	require.NoError(t, err, "CLI command should complete without error")
+
+	// Verify the todo list file exists
+	todoPath := filepath.Join(tmpDir, "todos.md")
+	_, err = os.Stat(todoPath)
+	assert.NoError(t, err, "todo list file should be created")
+
+	// Verify the file contains the todo
+	content, err := os.ReadFile(todoPath)
+	require.NoError(t, err, "should be able to read todo file")
+	assert.Contains(t, string(content), "Buy groceries", "todo file should contain the todo title")
+}

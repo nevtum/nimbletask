@@ -11,6 +11,13 @@ func main() {
 	// TODO: implement CLI entry point
 }
 
+// runCLI parses and executes CLI commands
+func runCLI(args []string, configRoot string) error {
+	title := args[1]
+	todoPath := filepath.Join(configRoot, "todos.md")
+	return runAdd(configRoot, title, todoPath)
+}
+
 // runInitConfig creates the configuration directory and file
 func runInitConfig(configRoot string) error {
 	configDir := filepath.Join(configRoot, ".todo")
