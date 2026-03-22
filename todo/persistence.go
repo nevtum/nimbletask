@@ -17,18 +17,22 @@ func (tl *TodoList) Save(path string) error {
 	return file.Save(tl.serialize())
 }
 
-// LoadTodoList loads a TodoList from a markdown file
-func LoadTodoList(path string) (*TodoList, error) {
+func (tl *TodoList) LoadFrom(path string) error {
 	file := NewFile(path)
 	content, err := file.Load()
 	if err != nil {
-		if err == err.(FileDoesNotExistError) {
-			return NewTodoList(), nil
+		if err == err.(FileDoesNotExist) {
+			return nil
 		} else {
-			return nil, err
+			return err
 		}
 	}
-	return deserialize(content)
+	newTodos, err := deserialize(content)
+	if err != nil {
+		return err
+	}
+	*tl = *newTodos
+	return nil
 }
 
 // serialize converts all todos in the list into their markdown string representation

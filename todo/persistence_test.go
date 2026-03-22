@@ -26,7 +26,8 @@ func roundTrip(t *testing.T, tl1 *TodoList) *TodoList {
 	err := tl1.Save(filePath)
 	assert.NoError(t, err, "Save failed during round-trip")
 
-	tl2, err := LoadTodoList(filePath)
+	tl2 := NewTodoList()
+	err = tl2.LoadFrom(filePath)
 	assert.NoError(t, err, "Load failed during round-trip")
 
 	return tl2
@@ -336,7 +337,8 @@ func TestLoad(t *testing.T) {
 		filePath := filepath.Join(tmpDir, "empty.md")
 		os.WriteFile(filePath, []byte{}, 0644)
 
-		tl, err := LoadTodoList(filePath)
+		tl := NewTodoList()
+		err := tl.LoadFrom(filePath)
 		assert.NoError(t, err)
 		assert.NotNil(t, tl)
 		assertValid(t, tl)
@@ -353,7 +355,8 @@ func TestLoad(t *testing.T) {
 `
 		os.WriteFile(filePath, []byte(markdown), 0644)
 
-		tl, err := LoadTodoList(filePath)
+		tl := NewTodoList()
+		err := tl.LoadFrom(filePath)
 		assert.NoError(t, err)
 		assert.Len(t, tl.todos, 1)
 		assert.Len(t, tl.roots, 1)
@@ -376,7 +379,8 @@ func TestLoad(t *testing.T) {
 `
 		os.WriteFile(filePath, []byte(markdown), 0644)
 
-		tl, err := LoadTodoList(filePath)
+		tl := NewTodoList()
+		err := tl.LoadFrom(filePath)
 		assert.NoError(t, err)
 		assert.Len(t, tl.todos, 3)
 		assert.Len(t, tl.roots, 1)
@@ -398,7 +402,8 @@ func TestLoad(t *testing.T) {
 `
 		os.WriteFile(filePath, []byte(markdown), 0644)
 
-		tl, err := LoadTodoList(filePath)
+		tl := NewTodoList()
+		err := tl.LoadFrom(filePath)
 		assert.NoError(t, err)
 		assert.Len(t, tl.todos, 1)
 
@@ -420,7 +425,8 @@ func TestLoad(t *testing.T) {
 		markdown := `- [ ] <!-- id:ts|parent:|created:2020-05-01T12:00:00Z|updated:2020-05-02T13:00:00Z --> Timestamped Task`
 		os.WriteFile(filePath, []byte(markdown), 0644)
 
-		tl, err := LoadTodoList(filePath)
+		tl := NewTodoList()
+		err := tl.LoadFrom(filePath)
 		assert.NoError(t, err)
 
 		todo := tl.roots[0]
@@ -440,7 +446,8 @@ func TestLoad(t *testing.T) {
 `
 		os.WriteFile(filePath, []byte(markdown), 0644)
 
-		tl, err := LoadTodoList(filePath)
+		tl := NewTodoList()
+		err := tl.LoadFrom(filePath)
 		assert.NoError(t, err)
 		assert.Len(t, tl.roots, 3)
 		assert.Equal(t, "root1", tl.roots[0].ID)
@@ -459,7 +466,8 @@ func TestLoad(t *testing.T) {
 `
 		os.WriteFile(filePath, []byte(markdown), 0644)
 
-		tl, err := LoadTodoList(filePath)
+		tl := NewTodoList()
+		err := tl.LoadFrom(filePath)
 		assert.NoError(t, err)
 
 		todo := tl.roots[0]
@@ -474,7 +482,8 @@ func TestLoad(t *testing.T) {
 		markdown := `- [ ] <!-- id:nodesc|parent:|created:2024-01-15T10:00:00Z --> Task`
 		os.WriteFile(filePath, []byte(markdown), 0644)
 
-		tl, err := LoadTodoList(filePath)
+		tl := NewTodoList()
+		err := tl.LoadFrom(filePath)
 		assert.NoError(t, err)
 
 		todo := tl.roots[0]
@@ -494,7 +503,8 @@ func TestLoadErrors(t *testing.T) {
 		markdown := `- [ ] Task without metadata`
 		os.WriteFile(filePath, []byte(markdown), 0644)
 
-		_, err := LoadTodoList(filePath)
+		tl := NewTodoList()
+		err := tl.LoadFrom(filePath)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "metadata")
 	})
@@ -506,7 +516,8 @@ func TestLoadErrors(t *testing.T) {
 		markdown := `- [ ] <!-- id:|parent:|created:2024-01-15T10:00:00Z --> Task`
 		os.WriteFile(filePath, []byte(markdown), 0644)
 
-		_, err := LoadTodoList(filePath)
+		tl := NewTodoList()
+		err := tl.LoadFrom(filePath)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "ID")
 	})
@@ -518,7 +529,8 @@ func TestLoadErrors(t *testing.T) {
 		markdown := `- [ ] <!-- id:abc|parent:| --> Task`
 		os.WriteFile(filePath, []byte(markdown), 0644)
 
-		_, err := LoadTodoList(filePath)
+		tl := NewTodoList()
+		err := tl.LoadFrom(filePath)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "missing key-value separator")
 	})
@@ -530,7 +542,8 @@ func TestLoadErrors(t *testing.T) {
 		markdown := `- [ ] <!-- id:abc|parent:|created:not-a-date|completed:2024-01-15T10:00:00Z --> Task`
 		os.WriteFile(filePath, []byte(markdown), 0644)
 
-		_, err := LoadTodoList(filePath)
+		tl := NewTodoList()
+		err := tl.LoadFrom(filePath)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "date")
 	})
@@ -543,7 +556,8 @@ func TestLoadErrors(t *testing.T) {
 	- [ ] <!-- id:dup|parent:|created:2024-01-15T10:00:00Z --> Task 2`
 		os.WriteFile(filePath, []byte(markdown), 0644)
 
-		_, err := LoadTodoList(filePath)
+		tl := NewTodoList()
+		err := tl.LoadFrom(filePath)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "duplicate")
 		assert.Contains(t, err.Error(), "dup")
@@ -556,7 +570,8 @@ func TestLoadErrors(t *testing.T) {
 		markdown := `- [ ] <!-- id:abc parent:|created:2024-01-15T10:00:00Z --> Task`
 		os.WriteFile(filePath, []byte(markdown), 0644)
 
-		_, err := LoadTodoList(filePath)
+		tl := NewTodoList()
+		err := tl.LoadFrom(filePath)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "format")
 	})
@@ -571,7 +586,8 @@ func TestLoadNonExistentFile(t *testing.T) {
 	tmpDir := t.TempDir()
 	nonExistent := filepath.Join(tmpDir, "does-not-exist.md")
 
-	tl, err := LoadTodoList(nonExistent)
+	tl := NewTodoList()
+	err := tl.LoadFrom(nonExistent)
 	assert.NoError(t, err)
 	assert.NotNil(t, tl)
 	assertValid(t, tl)

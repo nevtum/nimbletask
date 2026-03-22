@@ -88,7 +88,7 @@ func (tl *TodoList) CanMove(id, newParentID string) (bool, error)
 
 // Persistence
 func (tl *TodoList) Save(path string) error
-func LoadTodoList(path string) (*TodoList, error)
+func (tl *TodoList) LoadFrom(path string) error
 ```
 
 ## Persistence Format

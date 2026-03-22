@@ -48,7 +48,7 @@ func (f *File) Save(content string) error {
 func pathToReader(path string) (io.Reader, error) {
 	// If file doesn't exist, return empty list (per test behavior)
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return nil, FileDoesNotExistError{
+		return nil, FileDoesNotExist{
 			Err: err,
 		}
 	}

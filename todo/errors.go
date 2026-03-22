@@ -20,10 +20,10 @@ var (
 	ErrCycleDetected = errors.New("cycle detected in hierarchy")
 )
 
-type FileDoesNotExistError struct {
+type FileDoesNotExist struct {
 	Err error
 }
 
-func (e FileDoesNotExistError) Error() string {
+func (e FileDoesNotExist) Error() string {
 	return fmt.Sprintf("file does not exist: %v", e.Err)
 }
