@@ -9,7 +9,7 @@ test:
 
 # Run tests with coverage
 test-coverage:
-	go test ./... -v -cover
+	go test ./... -coverprofile=coverage.out && go tool cover -func=coverage.out
 
 # Build the application
 build:
