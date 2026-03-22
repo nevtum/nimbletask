@@ -99,6 +99,27 @@ func saveToString(t *testing.T, tl *TodoList) string {
 	return string(content)
 }
 
+// serializeToString directly serializes a TodoList to string (no file I/O)
+func serializeToString(t *testing.T, tl *TodoList) string {
+	t.Helper()
+	return tl.serialize()
+}
+
+// deserializeFromString directly deserializes markdown content to TodoList (no file I/O)
+func deserializeFromString(t *testing.T, content string) *TodoList {
+	t.Helper()
+	tl, err := deserialize(content)
+	assert.NoError(t, err)
+	return tl
+}
+
+// deserializeFromStringWithError directly deserializes and expects an error
+func deserializeFromStringWithError(t *testing.T, content string) error {
+	t.Helper()
+	_, err := deserialize(content)
+	return err
+}
+
 // ============================================================================
 // SAVE/LOAD ROUND-TRIP TESTS (Data Fidelity)
 // ============================================================================
@@ -210,9 +231,9 @@ func TestSaveLoadRoundTrip(t *testing.T) {
 // ============================================================================
 
 func TestSaveFormat(t *testing.T) {
-	t.Run("empty list produces empty file", func(t *testing.T) {
+	t.Run("empty list produces empty output", func(t *testing.T) {
 		tl := NewTodoList()
-		content := saveToString(t, tl)
+		content := serializeToString(t, tl)
 		assert.Empty(t, strings.TrimSpace(content))
 	})
 
@@ -220,7 +241,7 @@ func TestSaveFormat(t *testing.T) {
 		tl := NewTodoList()
 		tl.Add("Task", "", -1) // default priority = 0
 
-		content := saveToString(t, tl)
+		content := serializeToString(t, tl)
 		assert.NotContains(t, content, "priority:")
 	})
 
@@ -229,7 +250,7 @@ func TestSaveFormat(t *testing.T) {
 		todo, _ := tl.Add("Task", "", -1)
 		tl.Update(todo.ID, TodoUpdate{Priority: intPtr(5)})
 
-		content := saveToString(t, tl)
+		content := serializeToString(t, tl)
 		assert.Contains(t, content, "priority:5")
 	})
 
@@ -238,7 +259,7 @@ func TestSaveFormat(t *testing.T) {
 		todo, _ := tl.Add("Task", "", -1)
 		tl.Update(todo.ID, TodoUpdate{Priority: intPtr(1)}) // no DueDate
 
-		content := saveToString(t, tl)
+		content := serializeToString(t, tl)
 		assert.NotContains(t, content, "due:")
 	})
 
@@ -251,7 +272,7 @@ func TestSaveFormat(t *testing.T) {
 		due := startTime.Add(24 * time.Hour)
 		tl.Update(todo.ID, TodoUpdate{DueDate: &due})
 
-		content := saveToString(t, tl)
+		content := serializeToString(t, tl)
 		assert.Contains(t, content, "due:2024-01-16T10:00:00Z")
 	})
 
@@ -259,7 +280,7 @@ func TestSaveFormat(t *testing.T) {
 		tl := NewTodoList()
 		tl.Add("Task", "", -1)
 
-		content := saveToString(t, tl)
+		content := serializeToString(t, tl)
 		assert.NotContains(t, content, "completed:")
 	})
 
@@ -271,7 +292,7 @@ func TestSaveFormat(t *testing.T) {
 		todo, _ := tl.Add("Task", "", -1)
 		tl.Complete(todo.ID)
 
-		content := saveToString(t, tl)
+		content := serializeToString(t, tl)
 		assert.Contains(t, content, "completed:2024-01-15T10:00:00Z")
 	})
 
@@ -280,7 +301,7 @@ func TestSaveFormat(t *testing.T) {
 		todo, _ := tl.Add("Task", "", -1)
 		tl.Update(todo.ID, TodoUpdate{Tags: []string{"tag1", "tag2", "tag3"}})
 
-		content := saveToString(t, tl)
+		content := serializeToString(t, tl)
 		assert.Contains(t, content, "tags:tag1,tag2,tag3")
 	})
 
@@ -289,7 +310,7 @@ func TestSaveFormat(t *testing.T) {
 		todo, _ := tl.Add("Task", "", -1)
 		tl.Update(todo.ID, TodoUpdate{Description: strPtr("Line 1\nLine 2\nLine 3")})
 
-		content := saveToString(t, tl)
+		content := serializeToString(t, tl)
 		lines := strings.Split(strings.TrimSpace(content), "\n")
 		assert.Len(t, lines, 4)
 		assert.Contains(t, lines[1], "  Line 1")
@@ -303,7 +324,7 @@ func TestSaveFormat(t *testing.T) {
 		child, _ := tl.Add("Child", parent.ID, -1)
 		_, _ = tl.Add("Grandchild", child.ID, -1)
 
-		content := saveToString(t, tl)
+		content := serializeToString(t, tl)
 		lines := strings.Split(strings.TrimSpace(content), "\n")
 
 		// Parent: no indent
@@ -320,7 +341,7 @@ func TestSaveFormat(t *testing.T) {
 		tl.Add("Second", "", -1)
 		tl.Add("Third", "", -1)
 
-		content := saveToString(t, tl)
+		content := serializeToString(t, tl)
 		lines := strings.Split(strings.TrimSpace(content), "\n")
 		assert.Contains(t, lines[0], "First")
 		assert.Contains(t, lines[1], "Second")
@@ -333,14 +354,8 @@ func TestSaveFormat(t *testing.T) {
 // ============================================================================
 
 func TestLoad(t *testing.T) {
-	t.Run("empty file returns empty TodoList", func(t *testing.T) {
-		tmpDir := t.TempDir()
-		filePath := filepath.Join(tmpDir, "empty.md")
-		os.WriteFile(filePath, []byte{}, 0644)
-
-		tl := NewTodoList()
-		err := tl.Load(NewFile(filePath))
-		assert.NoError(t, err)
+	t.Run("empty content returns empty TodoList", func(t *testing.T) {
+		tl := deserializeFromString(t, "")
 		assert.NotNil(t, tl)
 		assertValid(t, tl)
 		assert.Len(t, tl.todos, 0)
@@ -348,17 +363,10 @@ func TestLoad(t *testing.T) {
 	})
 
 	t.Run("single root todo with basic fields", func(t *testing.T) {
-		tmpDir := t.TempDir()
-		filePath := filepath.Join(tmpDir, "single.md")
-
 		markdown := `- [ ] <!-- id:abc123|parent:|created:2024-01-15T10:00:00Z --> Task Title
   Description
 `
-		os.WriteFile(filePath, []byte(markdown), 0644)
-
-		tl := NewTodoList()
-		err := tl.Load(NewFile(filePath))
-		assert.NoError(t, err)
+		tl := deserializeFromString(t, markdown)
 		assert.Len(t, tl.todos, 1)
 		assert.Len(t, tl.roots, 1)
 
@@ -371,18 +379,11 @@ func TestLoad(t *testing.T) {
 	})
 
 	t.Run("nested hierarchy with 3 levels", func(t *testing.T) {
-		tmpDir := t.TempDir()
-		filePath := filepath.Join(tmpDir, "nested.md")
-
 		markdown := `- [ ] <!-- id:root|parent:|priority:0|created:2024-01-15T10:00:00Z --> Root
   - [ ] <!-- id:child|parent:root|created:2024-01-15T10:00:00Z --> Child
     - [ ] <!-- id:grandchild|parent:child|created:2024-01-15T10:00:00Z --> Grandchild
 `
-		os.WriteFile(filePath, []byte(markdown), 0644)
-
-		tl := NewTodoList()
-		err := tl.Load(NewFile(filePath))
-		assert.NoError(t, err)
+		tl := deserializeFromString(t, markdown)
 		assert.Len(t, tl.todos, 3)
 		assert.Len(t, tl.roots, 1)
 
@@ -395,17 +396,10 @@ func TestLoad(t *testing.T) {
 	})
 
 	t.Run("all optional fields", func(t *testing.T) {
-		tmpDir := t.TempDir()
-		filePath := filepath.Join(tmpDir, "full.md")
-
 		markdown := `- [x] <!-- id:full|parent:|priority:3|created:2024-01-15T10:00:00Z|completed:2024-01-16T14:30:00Z|due:2024-02-01T00:00:00Z|tags:tag1,tag2,tag3 --> Complete Task
   Full description with details
 `
-		os.WriteFile(filePath, []byte(markdown), 0644)
-
-		tl := NewTodoList()
-		err := tl.Load(NewFile(filePath))
-		assert.NoError(t, err)
+		tl := deserializeFromString(t, markdown)
 		assert.Len(t, tl.todos, 1)
 
 		todo := tl.roots[0]
@@ -419,16 +413,10 @@ func TestLoad(t *testing.T) {
 		assert.Contains(t, todo.Tags, "tag3")
 	})
 
-	t.Run("preserves timestamps from file", func(t *testing.T) {
-		tmpDir := t.TempDir()
-		filePath := filepath.Join(tmpDir, "timestamps.md")
-
+	t.Run("preserves timestamps from content", func(t *testing.T) {
 		markdown := `- [ ] <!-- id:ts|parent:|created:2020-05-01T12:00:00Z|updated:2020-05-02T13:00:00Z --> Timestamped Task`
-		os.WriteFile(filePath, []byte(markdown), 0644)
 
-		tl := NewTodoList()
-		err := tl.Load(NewFile(filePath))
-		assert.NoError(t, err)
+		tl := deserializeFromString(t, markdown)
 
 		todo := tl.roots[0]
 		expectedCreated := time.Date(2020, 5, 1, 12, 0, 0, 0, time.UTC)
@@ -438,18 +426,11 @@ func TestLoad(t *testing.T) {
 	})
 
 	t.Run("multiple roots maintain order", func(t *testing.T) {
-		tmpDir := t.TempDir()
-		filePath := filepath.Join(tmpDir, "order.md")
-
 		markdown := `- [ ] <!-- id:root1|parent:|created:2024-01-15T10:00:00Z --> First
 - [ ] <!-- id:root2|parent:|created:2024-01-15T10:00:00Z --> Second
 - [ ] <!-- id:root3|parent:|created:2024-01-15T10:00:00Z --> Third
 `
-		os.WriteFile(filePath, []byte(markdown), 0644)
-
-		tl := NewTodoList()
-		err := tl.Load(NewFile(filePath))
-		assert.NoError(t, err)
+		tl := deserializeFromString(t, markdown)
 		assert.Len(t, tl.roots, 3)
 		assert.Equal(t, "root1", tl.roots[0].ID)
 		assert.Equal(t, "root2", tl.roots[1].ID)
@@ -457,19 +438,12 @@ func TestLoad(t *testing.T) {
 	})
 
 	t.Run("multi-line description", func(t *testing.T) {
-		tmpDir := t.TempDir()
-		filePath := filepath.Join(tmpDir, "desc.md")
-
 		markdown := `- [ ] <!-- id:desc|parent:|created:2024-01-15T10:00:00Z --> Task
   First line
   Second line
   Third line
 `
-		os.WriteFile(filePath, []byte(markdown), 0644)
-
-		tl := NewTodoList()
-		err := tl.Load(NewFile(filePath))
-		assert.NoError(t, err)
+		tl := deserializeFromString(t, markdown)
 
 		todo := tl.roots[0]
 		expectedDesc := "First line\nSecond line\nThird line"
@@ -477,15 +451,9 @@ func TestLoad(t *testing.T) {
 	})
 
 	t.Run("empty description", func(t *testing.T) {
-		tmpDir := t.TempDir()
-		filePath := filepath.Join(tmpDir, "no-desc.md")
-
 		markdown := `- [ ] <!-- id:nodesc|parent:|created:2024-01-15T10:00:00Z --> Task`
-		os.WriteFile(filePath, []byte(markdown), 0644)
 
-		tl := NewTodoList()
-		err := tl.Load(NewFile(filePath))
-		assert.NoError(t, err)
+		tl := deserializeFromString(t, markdown)
 
 		todo := tl.roots[0]
 		assert.Empty(t, todo.Description)
@@ -498,81 +466,45 @@ func TestLoad(t *testing.T) {
 
 func TestLoadErrors(t *testing.T) {
 	t.Run("missing metadata", func(t *testing.T) {
-		tmpDir := t.TempDir()
-		filePath := filepath.Join(tmpDir, "bad.md")
-
 		markdown := `- [ ] Task without metadata`
-		os.WriteFile(filePath, []byte(markdown), 0644)
-
-		tl := NewTodoList()
-		err := tl.Load(NewFile(filePath))
+		err := deserializeFromStringWithError(t, markdown)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "metadata")
 	})
 
 	t.Run("invalid ID", func(t *testing.T) {
-		tmpDir := t.TempDir()
-		filePath := filepath.Join(tmpDir, "bad-id.md")
-
 		markdown := `- [ ] <!-- id:|parent:|created:2024-01-15T10:00:00Z --> Task`
-		os.WriteFile(filePath, []byte(markdown), 0644)
-
-		tl := NewTodoList()
-		err := tl.Load(NewFile(filePath))
+		err := deserializeFromStringWithError(t, markdown)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "ID")
 	})
 
 	t.Run("missing required created timestamp", func(t *testing.T) {
-		tmpDir := t.TempDir()
-		filePath := filepath.Join(tmpDir, "bad-time.md")
-
 		markdown := `- [ ] <!-- id:abc|parent:| --> Task`
-		os.WriteFile(filePath, []byte(markdown), 0644)
-
-		tl := NewTodoList()
-		err := tl.Load(NewFile(filePath))
+		err := deserializeFromStringWithError(t, markdown)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "missing key-value separator")
 	})
 
 	t.Run("invalid date format", func(t *testing.T) {
-		tmpDir := t.TempDir()
-		filePath := filepath.Join(tmpDir, "bad-date.md")
-
 		markdown := `- [ ] <!-- id:abc|parent:|created:not-a-date|completed:2024-01-15T10:00:00Z --> Task`
-		os.WriteFile(filePath, []byte(markdown), 0644)
-
-		tl := NewTodoList()
-		err := tl.Load(NewFile(filePath))
+		err := deserializeFromStringWithError(t, markdown)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "date")
 	})
 
 	t.Run("duplicate ID", func(t *testing.T) {
-		tmpDir := t.TempDir()
-		filePath := filepath.Join(tmpDir, "dup.md")
-
 		markdown := `- [ ] <!-- id:dup|parent:|created:2024-01-15T10:00:00Z --> Task 1
 	- [ ] <!-- id:dup|parent:|created:2024-01-15T10:00:00Z --> Task 2`
-		os.WriteFile(filePath, []byte(markdown), 0644)
-
-		tl := NewTodoList()
-		err := tl.Load(NewFile(filePath))
+		err := deserializeFromStringWithError(t, markdown)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "duplicate")
 		assert.Contains(t, err.Error(), "dup")
 	})
 
 	t.Run("malformed comment syntax", func(t *testing.T) {
-		tmpDir := t.TempDir()
-		filePath := filepath.Join(tmpDir, "syntax.md")
-
 		markdown := `- [ ] <!-- id:abc parent:|created:2024-01-15T10:00:00Z --> Task`
-		os.WriteFile(filePath, []byte(markdown), 0644)
-
-		tl := NewTodoList()
-		err := tl.Load(NewFile(filePath))
+		err := deserializeFromStringWithError(t, markdown)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "format")
 	})
