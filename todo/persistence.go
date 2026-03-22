@@ -51,66 +51,7 @@ func (tl *TodoList) serialize() string {
 	var sb strings.Builder
 
 	for _, todo := range tl.roots {
-		sb.WriteString(tl.serializeTodo(todo, 0))
-	}
-
-	return sb.String()
-}
-
-// serializeTodo converts a single Todo and all its children into markdown string representation
-func (tl *TodoList) serializeTodo(todo *Todo, depth int) string {
-	var sb strings.Builder
-
-	// Build checkbox
-	checkbox := "[ ]"
-	if todo.Completed {
-		checkbox = "[x]"
-	}
-
-	// Build indent
-	indent := strings.Repeat("  ", depth)
-
-	// Build metadata
-	metaParts := []string{
-		fmt.Sprintf("id:%s", todo.ID),
-		fmt.Sprintf("parent:%s", todo.ParentID),
-		fmt.Sprintf("created:%s", todo.CreatedAt.Format(time.RFC3339)),
-	}
-
-	if todo.Priority != 0 {
-		metaParts = append(metaParts, fmt.Sprintf("priority:%d", todo.Priority))
-	}
-	if todo.Completed {
-		metaParts = append(metaParts, fmt.Sprintf("completed:%s", todo.UpdatedAt.Format(time.RFC3339)))
-	}
-	if todo.DueDate != nil {
-		metaParts = append(metaParts, fmt.Sprintf("due:%s", todo.DueDate.Format(time.RFC3339)))
-	}
-	if len(todo.Tags) > 0 {
-		metaParts = append(metaParts, fmt.Sprintf("tags:%s", strings.Join(todo.Tags, ",")))
-	}
-
-	metadata := strings.Join(metaParts, "|")
-
-	// Build the todo line
-	line := fmt.Sprintf("%s- %s <!-- %s --> %s\n", indent, checkbox, metadata, todo.Title)
-	sb.WriteString(line)
-
-	// Write description if present
-	if todo.Description != "" {
-		lines := strings.Split(todo.Description, "\n")
-		for _, lineText := range lines {
-			if trimmed := strings.TrimSpace(lineText); trimmed == "" {
-				continue // Skip empty lines in description
-			}
-			descLine := fmt.Sprintf("%s  %s\n", indent, lineText)
-			sb.WriteString(descLine)
-		}
-	}
-
-	// Recursively serialize children
-	for _, child := range todo.Children {
-		sb.WriteString(tl.serializeTodo(child, depth+1))
+		sb.WriteString(todo.Serialize(0))
 	}
 
 	return sb.String()
