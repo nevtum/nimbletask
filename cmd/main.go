@@ -46,13 +46,12 @@ func NewRootCmd() *cobra.Command {
 		Short: "Add a new todo item",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			title := args[0]
 			// Determine todoPath if not set via flag
 			path := todoPath
 			if path == "" {
 				path = filepath.Join(configRoot, "todos.md")
 			}
-			return runAdd(configRoot, title, path)
+			return runAdd(path, args...)
 		},
 	}
 
@@ -83,7 +82,10 @@ func runInitConfig(configRoot string) error {
 }
 
 // runAdd creates a new todo and saves it to the todo list file
-func runAdd(configRoot string, title string, todoPath string) error {
+func runAdd(todoPath string, args ...string) error {
+	// Extract title from args
+	title := args[0]
+
 	// Create a new todo list
 	tl := todo.NewTodoList()
 
