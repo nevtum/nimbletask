@@ -89,6 +89,11 @@ func runAdd(todoPath string, args ...string) error {
 	// Create a new todo list
 	tl := todo.NewTodoList()
 
+	file := todo.NewFile(todoPath)
+	if err := tl.Load(file); err != nil {
+		return err
+	}
+
 	// Add the todo (no parent, append to end)
 	_, err := tl.Add(title, "", -1)
 	if err != nil {
@@ -96,6 +101,5 @@ func runAdd(todoPath string, args ...string) error {
 	}
 
 	// Save to file
-	file := todo.NewFile(todoPath)
 	return tl.Save(file)
 }
