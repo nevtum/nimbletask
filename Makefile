@@ -13,7 +13,8 @@ test-coverage:
 
 # Build the application
 build:
-	go build -o bin/todo ./cmd/main.go
+	@echo "Building todo_cli..."
+	go build -o bin/todo_cli ./cmd/*.go
 
 # Clean build artifacts
 clean:
