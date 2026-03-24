@@ -34,7 +34,7 @@ func NewRootCmd() *cobra.Command {
 	}
 
 	// Determine default config root (user's config directory)
-	defaultConfigRoot := filepath.Join(os.Getenv("HOME"), ".config", "todo")
+	defaultConfigRoot := filepath.Join(os.Getenv("HOME"), ".config", "todos")
 
 	// Persistent flags available to all subcommands
 	rootCmd.PersistentFlags().StringVar(&configRoot, "config", defaultConfigRoot, "Configuration directory root")
@@ -72,11 +72,7 @@ func NewRootCmd() *cobra.Command {
 
 // runInitConfig creates the configuration directory and file
 func runInitConfig(configRoot string) error {
-	configDir := filepath.Join(configRoot, ".todo")
-	if err := os.MkdirAll(configDir, 0755); err != nil {
-		return err
-	}
-	configPath := filepath.Join(configDir, "config.json")
+	configPath := filepath.Join(configRoot, "config.json")
 	return os.WriteFile(configPath, []byte("{}"), 0644)
 }
 

@@ -14,13 +14,13 @@ import (
 // This is the foundational command - all other operations depend on it.
 func TestInitConfigCommand(t *testing.T) {
 	// Use isolated temp directory (safe - no env vars modified)
-	tmpDir := t.TempDir()
+	configDir := t.TempDir()
 
 	// Get a fresh command instance
 	cmd := NewRootCmd()
 
 	// Set arguments: init-config with custom config directory
-	cmd.SetArgs([]string{"--config", tmpDir, "init-config"})
+	cmd.SetArgs([]string{"--config", configDir, "init-config"})
 
 	// Capture output
 	var out bytes.Buffer
@@ -34,7 +34,6 @@ func TestInitConfigCommand(t *testing.T) {
 	require.NoError(t, err, "init-config should complete without error")
 
 	// Verify config directory exists
-	configDir := filepath.Join(tmpDir, ".todo")
 	info, err := os.Stat(configDir)
 	require.NoError(t, err, "config directory should be created")
 	assert.True(t, info.IsDir(), "config path should be a directory")
@@ -250,7 +249,7 @@ func TestInitConfig_Idempotent(t *testing.T) {
 	require.NoError(t, err, "second init-config should also succeed (idempotent)")
 
 	// Verify config still exists
-	configPath := filepath.Join(tmpDir, ".todo", "config.json")
+	configPath := filepath.Join(tmpDir, "config.json")
 	_, err = os.Stat(configPath)
 	assert.NoError(t, err, "config.json should still exist")
 }
