@@ -326,3 +326,35 @@ func TestAddCommand_MissingArgs_ShowsUsage(t *testing.T) {
 	output := out.String()
 	assert.Contains(t, output, "Usage:", "usage should be shown when arguments are missing")
 }
+
+// TestAddCommand_MalformedConfig tests that add returns error when config file contains invalid JSON
+func TestAddCommand_MalformedConfig(t *testing.T) {
+	// Use isolated temp directory
+	tmpDir := t.TempDir()
+	todoPath := filepath.Join(tmpDir, "todos.md")
+
+	// Create config directory
+	configPath := filepath.Join(tmpDir, "config.json")
+	err := os.MkdirAll(tmpDir, 0755)
+	require.NoError(t, err, "should create config directory")
+
+	// Write malformed JSON to config file (simulating user editing error)
+	err = os.WriteFile(configPath, []byte(`{invalid json}`), 0644)
+	require.NoError(t, err, "should create malformed config file")
+
+	// Get a fresh command instance
+	cmd := NewRootCmd()
+	cmd.SetArgs([]string{"--config", tmpDir, "--file", todoPath, "add", "Test todo"})
+
+	// Capture output
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+	cmd.SetErr(&out)
+
+	// Execute command
+	err = cmd.Execute()
+
+	// Should error due to malformed config
+	require.Error(t, err, "add should return error when config file has malformed JSON")
+	assert.Contains(t, err.Error(), "failed to parse config file", "error should mention config file parsing")
+}
