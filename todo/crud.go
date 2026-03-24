@@ -139,12 +139,12 @@ func (tl *TodoList) GetRoots() []*Todo {
 }
 
 // GetChildren returns the children of a todo
-func (tl *TodoList) GetChildren(parentID string) []*Todo {
+func (tl *TodoList) GetChildren(parentID string) ([]*Todo, error) {
 	parent, err := tl.Get(parentID)
 	if err != nil {
-		return []*Todo{}
+		return nil, err
 	}
-	return parent.Children
+	return parent.Children, nil
 }
 
 // Helper functions

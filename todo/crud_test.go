@@ -248,14 +248,20 @@ func TestGetRoots(t *testing.T) {
 
 // TestGetChildren verifies retrieving children of a todo
 func TestGetChildren(t *testing.T) {
-	t.Run("retrieves children of a todo", func(t *testing.T) {
-		tl := NewTodoList()
-		parent, _ := tl.Add("Parent", "", -1)
-		tl.Add("Child 1", parent.ID, -1)
-		tl.Add("Child 2", parent.ID, -1)
+	tl := NewTodoList()
+	parent, _ := tl.Add("Parent", "", -1)
+	tl.Add("Child 1", parent.ID, -1)
+	tl.Add("Child 2", parent.ID, -1)
 
-		children := tl.GetChildren(parent.ID)
+	t.Run("retrieves children of a todo", func(t *testing.T) {
+		children, err := tl.GetChildren(parent.ID)
+		assert.NoError(t, err, "GetChildren failed")
 		assert.Len(t, children, 2, "Expected 2 children")
+	})
+	t.Run("fails to retrieve childrin of a non-existent todo", func(t *testing.T) {
+		children, err := tl.GetChildren("non-existent")
+		assert.Error(t, err, "Expected error when retrieving children of non-existent todo")
+		assert.Nil(t, children, "Expected nil children for non-existent todo")
 	})
 }
 

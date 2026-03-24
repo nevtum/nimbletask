@@ -72,7 +72,7 @@ func (tl *TodoList) Reorder(id string, newPosition int) error
 
 // Queries
 func (tl *TodoList) GetRoots() []*Todo
-func (tl *TodoList) GetChildren(parentID string) []*Todo
+func (tl *TodoList) GetChildren(parentID string) ([]*Todo, error)
 func (tl *TodoList) GetPath(id string) ([]*Todo, error)
 func (tl *TodoList) GetDepth(id string) (int, error)
 
