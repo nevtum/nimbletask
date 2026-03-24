@@ -34,7 +34,7 @@ func NewRootCmd() *cobra.Command {
 		Short: "Add a new todo item",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runAdd(todoPath, args...)
+			return runAdd(configRoot, todoPath, args...)
 		},
 	}
 

@@ -10,6 +10,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// setupTestConfig creates a config file at the specified config directory
+func setupTestConfig(t *testing.T, configDir string) {
+	t.Helper()
+	configPath := filepath.Join(configDir, "config.json")
+	err := os.MkdirAll(configDir, 0755)
+	require.NoError(t, err, "should create config directory")
+	err = os.WriteFile(configPath, []byte("{}"), 0644)
+	require.NoError(t, err, "should create config file")
+}
+
 // TestAddCommand is a table-driven test for the `add` cobra command.
 // It covers both happy path and error scenarios.
 func TestAddCommand(t *testing.T) {
@@ -40,9 +50,12 @@ func TestAddCommand(t *testing.T) {
 			tmpDir := t.TempDir()
 			todoFile := filepath.Join(tmpDir, "todo.md")
 
+			// Setup config file first
+			setupTestConfig(t, tmpDir)
+
 			// Get a fresh command instance for add with custom file path
 			addCmd := NewRootCmd()
-			addCmd.SetArgs([]string{"--file", todoFile, "add", tt.title})
+			addCmd.SetArgs([]string{"--config", tmpDir, "--file", todoFile, "add", tt.title})
 
 			// Capture output
 			var out bytes.Buffer
@@ -82,11 +95,14 @@ func TestCLI_AddCommand(t *testing.T) {
 	// Use isolated temp directory
 	tmpDir := t.TempDir()
 
+	// Setup config file first
+	setupTestConfig(t, tmpDir)
+
 	// Execute CLI command: todo add "Buy groceries"
 	// Use --file flag to specify test-specific location
 	todoPath := filepath.Join(tmpDir, "todo.md")
 	cmd := NewRootCmd()
-	cmd.SetArgs([]string{"--file", todoPath, "add", "Buy groceries"})
+	cmd.SetArgs([]string{"--config", tmpDir, "--file", todoPath, "add", "Buy groceries"})
 
 	// Capture output
 	var out bytes.Buffer
@@ -114,9 +130,12 @@ func TestAddCommand_ExactArgs(t *testing.T) {
 	tmpDir := t.TempDir()
 	todoPath := filepath.Join(tmpDir, "todo.md")
 
+	// Setup config file first
+	setupTestConfig(t, tmpDir)
+
 	// Get a fresh command instance
 	cmd := NewRootCmd()
-	cmd.SetArgs([]string{"--file", todoPath, "add"})
+	cmd.SetArgs([]string{"--config", tmpDir, "--file", todoPath, "add"})
 
 	// Capture output
 	var out bytes.Buffer
@@ -159,9 +178,12 @@ func TestAddCommand_WithCustomFileFlag(t *testing.T) {
 	tmpDir := t.TempDir()
 	customFile := filepath.Join(tmpDir, "custom-todos.md")
 
+	// Setup config file first
+	setupTestConfig(t, tmpDir)
+
 	// Execute add with custom file path
 	cmd := NewRootCmd()
-	cmd.SetArgs([]string{"--file", customFile, "add", "Custom file todo"})
+	cmd.SetArgs([]string{"--config", tmpDir, "--file", customFile, "add", "Custom file todo"})
 
 	// Capture output
 	var out bytes.Buffer
@@ -187,6 +209,9 @@ func TestAddCommand_DefaultPWD(t *testing.T) {
 	// Use isolated temp directory
 	tmpDir := t.TempDir()
 
+	// Setup config file first
+	setupTestConfig(t, tmpDir)
+
 	// Change to temp directory and restore afterwards
 	origDir, err := os.Getwd()
 	require.NoError(t, err, "should get current directory")
@@ -199,7 +224,7 @@ func TestAddCommand_DefaultPWD(t *testing.T) {
 
 	// Execute add without --file flag (should default to todo.md in PWD)
 	cmd := NewRootCmd()
-	cmd.SetArgs([]string{"add", "Default PWD todo"})
+	cmd.SetArgs([]string{"--config", tmpDir, "add", "Default PWD todo"})
 
 	// Capture output
 	var out bytes.Buffer
@@ -219,4 +244,27 @@ func TestAddCommand_DefaultPWD(t *testing.T) {
 	content, err := os.ReadFile(expectedFile)
 	require.NoError(t, err)
 	assert.Contains(t, string(content), "Default PWD todo")
+}
+
+// TestAddCommand_NoConfigError tests that add returns error when config file doesn't exist
+func TestAddCommand_NoConfigError(t *testing.T) {
+	// Use isolated temp directory (but don't create config)
+	tmpDir := t.TempDir()
+	todoPath := filepath.Join(tmpDir, "todo.md")
+
+	// Get a fresh command instance - no config setup
+	cmd := NewRootCmd()
+	cmd.SetArgs([]string{"--config", tmpDir, "--file", todoPath, "add", "Test todo"})
+
+	// Capture output
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+	cmd.SetErr(&out)
+
+	// Execute command
+	err := cmd.Execute()
+
+	// Should error due to missing config
+	assert.Error(t, err, "add should return error when config doesn't exist")
+	assert.Contains(t, err.Error(), "init-config must be called first", "error should mention init-config")
 }
