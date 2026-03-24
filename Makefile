@@ -14,7 +14,7 @@ test-coverage:
 # Build the application
 build:
 	@echo "Building todo_cli..."
-	go build -o bin/todo_cli ./cmd/*.go
+	go build -o bin/todo ./cmd/*.go
 
 # Clean build artifacts
 clean:
