@@ -86,11 +86,7 @@ func (tl *TodoList) checkCycleFromNode(startID string) error {
 		}
 		visited[currentID] = true
 
-		todo, exists := tl.todos[currentID]
-		if !exists {
-			// This should have been caught earlier, but just in case
-			return fmt.Errorf("todo %q not found while checking for cycles", currentID)
-		}
+		todo := tl.todos[currentID]
 
 		currentID = todo.ParentID
 	}
