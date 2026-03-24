@@ -38,7 +38,7 @@ func NewRootCmd() *cobra.Command {
 
 	// Persistent flags available to all subcommands
 	rootCmd.PersistentFlags().StringVar(&configRoot, "config", defaultConfigRoot, "Configuration directory root")
-	rootCmd.PersistentFlags().StringVar(&todoPath, "file", "", "Path to todo list file (default: <config>/todos.md)")
+	rootCmd.PersistentFlags().StringVar(&todoPath, "file", "", "Path to todo list file (default: todo.md in current directory)")
 
 	// addCmd adds a new todo item to the list
 	addCmd := &cobra.Command{
@@ -46,9 +46,13 @@ func NewRootCmd() *cobra.Command {
 		Short: "Add a new todo item",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// Determine todoPath if not set via flag
+			// Determine todoPath if not set via flag - default to todo.md in PWD
 			if todoPath == "" {
-				todoPath = filepath.Join(configRoot, "todos.md")
+				cwd, err := os.Getwd()
+				if err != nil {
+					return fmt.Errorf("failed to get working directory: %w", err)
+				}
+				todoPath = filepath.Join(cwd, "todo.md")
 			}
 			return runAdd(todoPath, args...)
 		},

@@ -72,16 +72,11 @@ func TestAddCommand(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Use isolated temp directory
 			tmpDir := t.TempDir()
+			todoFile := filepath.Join(tmpDir, "todo.md")
 
-			// Initialize config first via cobra command (prerequisite)
-			initCmd := NewRootCmd()
-			initCmd.SetArgs([]string{"--config", tmpDir, "init-config"})
-			err := initCmd.Execute()
-			require.NoError(t, err, "init-config should complete without error")
-
-			// Get a fresh command instance for add
+			// Get a fresh command instance for add with custom file path
 			addCmd := NewRootCmd()
-			addCmd.SetArgs([]string{"--config", tmpDir, "add", tt.title})
+			addCmd.SetArgs([]string{"--file", todoFile, "add", tt.title})
 
 			// Capture output
 			var out bytes.Buffer
@@ -89,7 +84,7 @@ func TestAddCommand(t *testing.T) {
 			addCmd.SetErr(&out)
 
 			// Execute add command
-			err = addCmd.Execute()
+			err := addCmd.Execute()
 
 			// Verify error expectations
 			if tt.wantErr {
@@ -104,12 +99,11 @@ func TestAddCommand(t *testing.T) {
 			require.NoError(t, err, "add should complete without error")
 
 			// Verify the todo list file exists
-			todoPath := filepath.Join(tmpDir, "todos.md")
-			_, err = os.Stat(todoPath)
+			_, err = os.Stat(todoFile)
 			assert.NoError(t, err, "todo list file should be created")
 
 			// Verify the file contains the expected content
-			content, err := os.ReadFile(todoPath)
+			content, err := os.ReadFile(todoFile)
 			require.NoError(t, err, "should be able to read todo file")
 			assert.Contains(t, string(content), tt.wantContent, "todo file should contain expected content")
 		})
@@ -122,15 +116,11 @@ func TestCLI_AddCommand(t *testing.T) {
 	// Use isolated temp directory
 	tmpDir := t.TempDir()
 
-	// Initialize config first via cobra command (prerequisite)
-	initCmd := NewRootCmd()
-	initCmd.SetArgs([]string{"--config", tmpDir, "init-config"})
-	err := initCmd.Execute()
-	require.NoError(t, err, "init-config should complete without error")
-
 	// Execute CLI command: todo add "Buy groceries"
+	// Use --file flag to specify test-specific location
+	todoPath := filepath.Join(tmpDir, "todo.md")
 	cmd := NewRootCmd()
-	cmd.SetArgs([]string{"--config", tmpDir, "add", "Buy groceries"})
+	cmd.SetArgs([]string{"--file", todoPath, "add", "Buy groceries"})
 
 	// Capture output
 	var out bytes.Buffer
@@ -138,13 +128,12 @@ func TestCLI_AddCommand(t *testing.T) {
 	cmd.SetErr(&out)
 
 	// Execute command
-	err = cmd.Execute()
+	err := cmd.Execute()
 
 	// Should succeed without error
 	require.NoError(t, err, "CLI command should complete without error")
 
 	// Verify the todo list file exists
-	todoPath := filepath.Join(tmpDir, "todos.md")
 	_, err = os.Stat(todoPath)
 	assert.NoError(t, err, "todo list file should be created")
 
@@ -157,10 +146,11 @@ func TestCLI_AddCommand(t *testing.T) {
 // TestAddCommand_ExactArgs tests that add command requires exactly one argument
 func TestAddCommand_ExactArgs(t *testing.T) {
 	tmpDir := t.TempDir()
+	todoPath := filepath.Join(tmpDir, "todo.md")
 
 	// Get a fresh command instance
 	cmd := NewRootCmd()
-	cmd.SetArgs([]string{"--config", tmpDir, "add"})
+	cmd.SetArgs([]string{"--file", todoPath, "add"})
 
 	// Capture output
 	var out bytes.Buffer
@@ -203,15 +193,9 @@ func TestAddCommand_WithCustomFileFlag(t *testing.T) {
 	tmpDir := t.TempDir()
 	customFile := filepath.Join(tmpDir, "custom-todos.md")
 
-	// Initialize config first
-	initCmd := NewRootCmd()
-	initCmd.SetArgs([]string{"--config", tmpDir, "init-config"})
-	err := initCmd.Execute()
-	require.NoError(t, err, "init-config should complete without error")
-
 	// Execute add with custom file path
 	cmd := NewRootCmd()
-	cmd.SetArgs([]string{"--config", tmpDir, "--file", customFile, "add", "Custom file todo"})
+	cmd.SetArgs([]string{"--file", customFile, "add", "Custom file todo"})
 
 	// Capture output
 	var out bytes.Buffer
@@ -219,7 +203,7 @@ func TestAddCommand_WithCustomFileFlag(t *testing.T) {
 	cmd.SetErr(&out)
 
 	// Execute command
-	err = cmd.Execute()
+	err := cmd.Execute()
 	require.NoError(t, err, "add with custom file should succeed")
 
 	// Verify the custom file exists
@@ -230,6 +214,45 @@ func TestAddCommand_WithCustomFileFlag(t *testing.T) {
 	content, err := os.ReadFile(customFile)
 	require.NoError(t, err)
 	assert.Contains(t, string(content), "Custom file todo")
+}
+
+// TestAddCommand_DefaultPWD tests that add command uses todo.md in current directory when no --file flag is specified
+func TestAddCommand_DefaultPWD(t *testing.T) {
+	// Use isolated temp directory
+	tmpDir := t.TempDir()
+
+	// Change to temp directory and restore afterwards
+	origDir, err := os.Getwd()
+	require.NoError(t, err, "should get current directory")
+	err = os.Chdir(tmpDir)
+	require.NoError(t, err, "should change to temp directory")
+	defer func() {
+		err := os.Chdir(origDir)
+		require.NoError(t, err, "should restore original directory")
+	}()
+
+	// Execute add without --file flag (should default to todo.md in PWD)
+	cmd := NewRootCmd()
+	cmd.SetArgs([]string{"add", "Default PWD todo"})
+
+	// Capture output
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+	cmd.SetErr(&out)
+
+	// Execute command
+	err = cmd.Execute()
+	require.NoError(t, err, "add without --file flag should succeed")
+
+	// Verify the todo.md file exists in the current directory (tmpDir)
+	expectedFile := filepath.Join(tmpDir, "todo.md")
+	_, err = os.Stat(expectedFile)
+	assert.NoError(t, err, "todo.md should be created in current directory")
+
+	// Verify content
+	content, err := os.ReadFile(expectedFile)
+	require.NoError(t, err)
+	assert.Contains(t, string(content), "Default PWD todo")
 }
 
 // TestInitConfig_Idempotent tests that init-config can be run multiple times
