@@ -31,23 +31,9 @@ func NewRootCmd() *cobra.Command {
 	rootCmd.PersistentFlags().StringVar(&configRoot, "config", defaultConfigRoot, "Configuration directory root")
 	rootCmd.PersistentFlags().StringVar(&todoPath, "file", "", "Path to todo list file (default: todo.md in current directory)")
 
-	// addCmd adds a new todo item to the list
-	addCmd := &cobra.Command{
-		Use:   "add [title]",
-		Short: "Add a new todo item",
-		RunE:  AddCmd(),
-	}
-
-	// initConfigCmd initializes the global configuration file
-	initConfigCmd := &cobra.Command{
-		Use:   "init-config",
-		Short: "Initialize the global configuration file",
-		RunE:  InitCmd(),
-	}
-
 	// Add subcommands to root
-	rootCmd.AddCommand(addCmd)
-	rootCmd.AddCommand(initConfigCmd)
+	rootCmd.AddCommand(AddCmd())
+	rootCmd.AddCommand(InitCmd())
 
 	return rootCmd
 }

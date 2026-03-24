@@ -9,9 +9,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// AddCmd returns a RunE function for the add command
+// AddCmd returns a *cobra.Command instance for the add command
 // Uses global variables configRoot and todoPath
-func AddCmd() func(cmd *cobra.Command, args []string) error {
+func AddCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "add [title]",
+		Short: "Add a new todo item",
+		RunE:  AddCmdFunc(),
+	}
+}
+
+func AddCmdFunc() func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		// Manual arg validation - shows usage when args are missing
 		if len(args) != 1 {
