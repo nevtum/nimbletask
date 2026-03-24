@@ -8,13 +8,7 @@ import (
 )
 
 // runAdd creates a new todo and saves it to the todo list file
-func runAdd(configRoot string, todoPath string, args ...string) error {
-	// Check if config file exists - init-config must be called first
-	configPath := filepath.Join(configRoot, "config.json")
-	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		return fmt.Errorf("config file not found at %s: init-config must be called first", configPath)
-	}
-
+func runAdd(todoPath string, args ...string) error {
 	// Determine todoPath if not set via flag - default to todo.md in PWD
 	if todoPath == "" {
 		cwd, err := os.Getwd()

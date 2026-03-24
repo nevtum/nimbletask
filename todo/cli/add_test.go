@@ -268,3 +268,61 @@ func TestAddCommand_NoConfigError(t *testing.T) {
 	assert.Error(t, err, "add should return error when config doesn't exist")
 	assert.Contains(t, err.Error(), "init-config must be called first", "error should mention init-config")
 }
+
+// TestAddCommand_NoConfig_NoUsage tests that when config is missing, only error is shown (no usage docs)
+func TestAddCommand_NoConfig_NoUsage(t *testing.T) {
+	// Use isolated temp directory (but don't create config)
+	tmpDir := t.TempDir()
+	todoPath := filepath.Join(tmpDir, "todo.md")
+
+	// Get a fresh command instance - no config setup
+	cmd := NewRootCmd()
+	cmd.SetArgs([]string{"--config", tmpDir, "--file", todoPath, "add", "Test todo"})
+
+	// Capture output
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+	cmd.SetErr(&out)
+
+	// Execute command
+	err := cmd.Execute()
+
+	// Should error
+	require.Error(t, err, "add should return error when config doesn't exist")
+
+	// Verify error message is shown
+	output := out.String()
+	assert.Contains(t, output, "init-config must be called first", "error message should be shown")
+
+	// Verify usage is NOT shown (SilenceUsage should prevent this)
+	assert.NotContains(t, output, "Usage:", "usage should NOT be shown when config is missing")
+	assert.NotContains(t, output, "Flags:", "flags should NOT be shown when config is missing")
+}
+
+// TestAddCommand_MissingArgs_ShowsUsage tests that when args are missing, usage docs are shown
+func TestAddCommand_MissingArgs_ShowsUsage(t *testing.T) {
+	tmpDir := t.TempDir()
+	todoPath := filepath.Join(tmpDir, "todo.md")
+
+	// Setup config file first (so config error doesn't mask the args error)
+	setupTestConfig(t, tmpDir)
+
+	// Get a fresh command instance - no title argument
+	cmd := NewRootCmd()
+	cmd.SetArgs([]string{"--config", tmpDir, "--file", todoPath, "add"})
+
+	// Capture output
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+	cmd.SetErr(&out)
+
+	// Execute without arguments
+	err := cmd.Execute()
+
+	// Should error due to missing argument
+	require.Error(t, err, "add without arguments should error")
+
+	// Verify usage IS shown for missing arguments (SilenceUsage only applies to RunE errors, not arg validation)
+	output := out.String()
+	assert.Contains(t, output, "Usage:", "usage should be shown when arguments are missing")
+}

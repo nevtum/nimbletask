@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -32,9 +33,21 @@ func NewRootCmd() *cobra.Command {
 	addCmd := &cobra.Command{
 		Use:   "add [title]",
 		Short: "Add a new todo item",
-		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runAdd(configRoot, todoPath, args...)
+			// Manual arg validation - shows usage when args are missing
+			if len(args) != 1 {
+				return fmt.Errorf("accepts 1 arg(s), received %d", len(args))
+			}
+
+			// Check for config file first
+			configPath := filepath.Join(configRoot, "config.json")
+			if _, err := os.Stat(configPath); os.IsNotExist(err) {
+				// Silence usage for config errors - only show error message
+				cmd.SilenceUsage = true
+				return fmt.Errorf("config file not found at %s: init-config must be called first", configPath)
+			}
+
+			return runAdd(todoPath, args...)
 		},
 	}
 
