@@ -44,6 +44,39 @@ func TestInitConfigCommand(t *testing.T) {
 	assert.NoError(t, err, "config.json should be created")
 }
 
+// TestInitConfig_CreatesParentDirectories tests that init-config creates
+// parent directories when they don't exist (fresh install scenario)
+func TestInitConfig_CreatesParentDirectories(t *testing.T) {
+	// Use a nested path that doesn't exist yet - simulating fresh install
+	// where ~/.config/todos/ doesn't exist
+	tmpDir := t.TempDir()
+	configDir := filepath.Join(tmpDir, "nested", ".config", "todos")
+
+	// Ensure the path doesn't exist yet
+	_, err := os.Stat(configDir)
+	require.True(t, os.IsNotExist(err), "config dir should not exist initially")
+
+	// Execute init-config
+	cmd := NewRootCmd()
+	cmd.SetArgs([]string{"--config", configDir, "init-config"})
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+	cmd.SetErr(&out)
+
+	err = cmd.Execute()
+	require.NoError(t, err, "init-config should create parent directories and succeed")
+
+	// Verify config directory was created
+	info, err := os.Stat(configDir)
+	require.NoError(t, err, "config directory should be created")
+	assert.True(t, info.IsDir(), "config path should be a directory")
+
+	// Verify config file exists
+	configPath := filepath.Join(configDir, "config.json")
+	_, err = os.Stat(configPath)
+	assert.NoError(t, err, "config.json should be created in new directory")
+}
+
 // TestInitConfig_Idempotent tests that init-config can be run multiple times
 func TestInitConfig_Idempotent(t *testing.T) {
 	tmpDir := t.TempDir()
