@@ -1,19 +1,21 @@
 package cli
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
 )
 
+// Global flag variables for CLI configuration
+var (
+	configRoot string
+	todoPath   string
+)
+
 // NewRootCmd creates a new root command with all subcommands.
 // This factory function enables testing by providing fresh command instances.
 func NewRootCmd() *cobra.Command {
-	// Local variables for this command instance
-	var configRoot string
-	var todoPath string
 
 	// rootCmd is the main entry point for the CLI
 	rootCmd := &cobra.Command{
@@ -33,31 +35,14 @@ func NewRootCmd() *cobra.Command {
 	addCmd := &cobra.Command{
 		Use:   "add [title]",
 		Short: "Add a new todo item",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			// Manual arg validation - shows usage when args are missing
-			if len(args) != 1 {
-				return fmt.Errorf("accepts 1 arg(s), received %d", len(args))
-			}
-
-			// Check for config file first
-			configPath := filepath.Join(configRoot, "config.json")
-			if _, err := os.Stat(configPath); os.IsNotExist(err) {
-				// Silence usage for config errors - only show error message
-				cmd.SilenceUsage = true
-				return fmt.Errorf("config file not found at %s: init-config must be called first", configPath)
-			}
-
-			return runAdd(todoPath, args...)
-		},
+		RunE:  AddCmd(),
 	}
 
 	// initConfigCmd initializes the global configuration file
 	initConfigCmd := &cobra.Command{
 		Use:   "init-config",
 		Short: "Initialize the global configuration file",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runInitConfig(configRoot)
-		},
+		RunE:  InitCmd(),
 	}
 
 	// Add subcommands to root
