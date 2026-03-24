@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -357,4 +358,53 @@ func TestAddCommand_MalformedConfig(t *testing.T) {
 	// Should error due to malformed config
 	require.Error(t, err, "add should return error when config file has malformed JSON")
 	assert.Contains(t, err.Error(), "failed to parse config file", "error should mention config file parsing")
+}
+
+// setupTestConfigWithPriority creates a config file with specified default_priority
+func setupTestConfigWithPriority(t *testing.T, configDir string, priority int) {
+	t.Helper()
+	configPath := filepath.Join(configDir, "config.json")
+	err := os.MkdirAll(configDir, 0755)
+	require.NoError(t, err, "should create config directory")
+	configContent := fmt.Sprintf(`{"filename": "todos.md", "default_priority": %d}`, priority)
+	err = os.WriteFile(configPath, []byte(configContent), 0644)
+	require.NoError(t, err, "should create config file with default_priority")
+}
+
+// TestAddCommand_UsesDefaultPriorityFromConfig verifies that the add command
+// reads default_priority from config and applies it to new todos.
+// This is foundational - config values should drive default behavior.
+func TestAddCommand_UsesDefaultPriorityFromConfig(t *testing.T) {
+	// Use isolated temp directory
+	tmpDir := t.TempDir()
+	todoPath := filepath.Join(tmpDir, "todos.md")
+
+	// Setup config file with default_priority: 3
+	setupTestConfigWithPriority(t, tmpDir, 3)
+
+	// Execute add without --priority flag (should use default from config)
+	cmd := NewRootCmd()
+	cmd.SetArgs([]string{"--config", tmpDir, "--file", todoPath, "add", "Priority test todo"})
+
+	// Capture output
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+	cmd.SetErr(&out)
+
+	// Execute command
+	err := cmd.Execute()
+	require.NoError(t, err, "add should complete without error")
+
+	// Verify the todo list file exists
+	_, err = os.Stat(todoPath)
+	assert.NoError(t, err, "todo list file should be created")
+
+	// Verify the file contains the expected priority in metadata
+	content, err := os.ReadFile(todoPath)
+	require.NoError(t, err, "should be able to read todo file")
+
+	// The metadata should contain priority:3 from config default
+	contentStr := string(content)
+	assert.Contains(t, contentStr, "Priority test todo", "todo file should contain the todo title")
+	assert.Contains(t, contentStr, "priority:3", "todo should have default priority from config")
 }

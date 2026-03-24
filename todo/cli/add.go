@@ -20,11 +20,6 @@ func AddCmd() *cobra.Command {
 	}
 }
 
-// Config represents the configuration structure from config.json
-type Config struct {
-	Filename string `json:"filename"`
-}
-
 func AddCmdFunc() func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		// Manual arg validation - shows usage when args are missing
@@ -72,9 +67,18 @@ func AddCmdFunc() func(cmd *cobra.Command, args []string) error {
 		}
 
 		// Add the todo (no parent, append to end)
-		_, err = tl.Add(title, "", -1)
+		todoItem, err := tl.Add(title, "", -1)
 		if err != nil {
 			return err
+		}
+
+		// Apply default priority from config if specified
+		if config.DefaultPriority > 0 {
+			priority := config.DefaultPriority
+			_, err = tl.Update(todoItem.ID, todo.TodoUpdate{Priority: &priority})
+			if err != nil {
+				return err
+			}
 		}
 
 		// Save to file

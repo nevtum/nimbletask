@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 
@@ -23,7 +24,8 @@ func InitCmdFunc() func(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
+		bytes, _ := json.Marshal(defaultConfig())
 		configPath := filepath.Join(configRoot, "config.json")
-		return os.WriteFile(configPath, []byte(`{"filename": "todos.md"}`), 0644)
+		return os.WriteFile(configPath, bytes, 0644)
 	}
 }
