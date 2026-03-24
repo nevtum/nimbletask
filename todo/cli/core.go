@@ -32,8 +32,9 @@ func NewRootCmd() *cobra.Command {
 	rootCmd.PersistentFlags().StringVar(&todoPath, "file", "", "Path to todo list file (default: todo.md in current directory)")
 
 	// Add subcommands to root
-	rootCmd.AddCommand(AddCmd())
 	rootCmd.AddCommand(InitCmd())
+	rootCmd.AddCommand(AddCmd())
+	rootCmd.AddCommand(CompleteCmd())
 
 	return rootCmd
 }
