@@ -408,3 +408,41 @@ func TestAddCommand_UsesDefaultPriorityFromConfig(t *testing.T) {
 	assert.Contains(t, contentStr, "Priority test todo", "todo file should contain the todo title")
 	assert.Contains(t, contentStr, "priority:3", "todo should have default priority from config")
 }
+
+// TestAddCommand_WithPriorityFlag verifies that the --priority CLI flag
+// overrides the default_priority from config when creating a new todo.
+// This ensures CLI flags take precedence over configuration defaults.
+func TestAddCommand_WithPriorityFlag(t *testing.T) {
+	// Use isolated temp directory
+	tmpDir := t.TempDir()
+	todoPath := filepath.Join(tmpDir, "todos.md")
+
+	// Setup config file with default_priority: 3
+	setupTestConfigWithPriority(t, tmpDir, 3)
+
+	// Execute add with --priority flag (should override config default)
+	cmd := NewRootCmd()
+	cmd.SetArgs([]string{"--config", tmpDir, "--file", todoPath, "add", "Priority flag todo", "--priority", "5"})
+
+	// Capture output
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+	cmd.SetErr(&out)
+
+	// Execute command
+	err := cmd.Execute()
+	require.NoError(t, err, "add with --priority flag should succeed")
+
+	// Verify the todo list file exists
+	_, err = os.Stat(todoPath)
+	assert.NoError(t, err, "todo list file should be created")
+
+	// Verify the file contains the CLI-specified priority (not the config default)
+	content, err := os.ReadFile(todoPath)
+	require.NoError(t, err, "should be able to read todo file")
+
+	contentStr := string(content)
+	assert.Contains(t, contentStr, "Priority flag todo", "todo file should contain the todo title")
+	assert.Contains(t, contentStr, "priority:5", "todo should have priority from CLI flag (5), not config default (3)")
+	assert.NotContains(t, contentStr, "priority:3", "todo should NOT have config default priority when flag is provided")
+}

@@ -10,14 +10,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// priorityFlag is the local flag variable for the --priority flag
+var priorityFlag int
+
 // AddCmd returns a *cobra.Command instance for the add command
 // Uses global variables configRoot and todoPath
 func AddCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "add [title]",
 		Short: "Add a new todo item",
 		RunE:  AddCmdFunc(),
 	}
+
+	// Add --priority flag: priority level for the new todo (overrides config default)
+	cmd.Flags().IntVar(&priorityFlag, "priority", 0, "Priority level for the new todo (overrides config default)")
+
+	return cmd
 }
 
 func AddCmdFunc() func(cmd *cobra.Command, args []string) error {
@@ -72,10 +80,19 @@ func AddCmdFunc() func(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		// Apply default priority from config if specified
-		if config.DefaultPriority > 0 {
-			priority := config.DefaultPriority
-			_, err = tl.Update(todoItem.ID, todo.TodoUpdate{Priority: &priority})
+		// Determine priority: flag value takes precedence over config default
+		var finalPriority int
+		if cmd.Flags().Changed("priority") {
+			// User explicitly provided --priority flag
+			finalPriority = priorityFlag
+		} else if config.DefaultPriority > 0 {
+			// Use config default when flag not provided
+			finalPriority = config.DefaultPriority
+		}
+
+		// Apply priority if set (either from flag or config)
+		if finalPriority > 0 {
+			_, err = tl.Update(todoItem.ID, todo.TodoUpdate{Priority: &finalPriority})
 			if err != nil {
 				return err
 			}
