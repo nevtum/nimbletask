@@ -47,11 +47,10 @@ func NewRootCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Determine todoPath if not set via flag
-			path := todoPath
-			if path == "" {
-				path = filepath.Join(configRoot, "todos.md")
+			if todoPath == "" {
+				todoPath = filepath.Join(configRoot, "todos.md")
 			}
-			return runAdd(path, args...)
+			return runAdd(todoPath, args...)
 		},
 	}
 
