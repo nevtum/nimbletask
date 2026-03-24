@@ -94,6 +94,11 @@ func AddCmdFunc() func(cmd *cobra.Command, args []string) error {
 		}
 
 		// Save to file
-		return tl.Save(file)
+		if err := tl.Save(file); err != nil {
+			return err
+		}
+
+		fmt.Printf("Todo created! ID is %s\n", todoItem.ID)
+		return nil
 	}
 }
