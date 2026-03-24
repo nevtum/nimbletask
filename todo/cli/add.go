@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -19,6 +20,11 @@ func AddCmd() *cobra.Command {
 	}
 }
 
+// Config represents the configuration structure from config.json
+type Config struct {
+	Filename string `json:"filename"`
+}
+
 func AddCmdFunc() func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		// Manual arg validation - shows usage when args are missing
@@ -34,13 +40,24 @@ func AddCmdFunc() func(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("config file not found at %s: init-config must be called first", configPath)
 		}
 
-		// Determine todoPath if not set via flag - default to todo.md in PWD
+		// Read and parse config file
+		configData, err := os.ReadFile(configPath)
+		if err != nil {
+			return fmt.Errorf("failed to read config file: %w", err)
+		}
+
+		var config Config
+		if err := json.Unmarshal(configData, &config); err != nil {
+			return fmt.Errorf("failed to parse config file: %w", err)
+		}
+
+		// Determine todoPath if not set via flag - default to filename from config in PWD
 		if todoPath == "" {
 			cwd, err := os.Getwd()
 			if err != nil {
 				return fmt.Errorf("failed to get working directory: %w", err)
 			}
-			todoPath = filepath.Join(cwd, "todo.md")
+			todoPath = filepath.Join(cwd, config.Filename)
 		}
 
 		// Extract title from args
@@ -55,7 +72,7 @@ func AddCmdFunc() func(cmd *cobra.Command, args []string) error {
 		}
 
 		// Add the todo (no parent, append to end)
-		_, err := tl.Add(title, "", -1)
+		_, err = tl.Add(title, "", -1)
 		if err != nil {
 			return err
 		}

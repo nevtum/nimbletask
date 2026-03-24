@@ -16,7 +16,7 @@ func setupTestConfig(t *testing.T, configDir string) {
 	configPath := filepath.Join(configDir, "config.json")
 	err := os.MkdirAll(configDir, 0755)
 	require.NoError(t, err, "should create config directory")
-	err = os.WriteFile(configPath, []byte("{}"), 0644)
+	err = os.WriteFile(configPath, []byte(`{"filename": "todos.md"}`), 0644)
 	require.NoError(t, err, "should create config file")
 }
 
@@ -48,7 +48,7 @@ func TestAddCommand(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Use isolated temp directory
 			tmpDir := t.TempDir()
-			todoFile := filepath.Join(tmpDir, "todo.md")
+			todoFile := filepath.Join(tmpDir, "todos.md")
 
 			// Setup config file first
 			setupTestConfig(t, tmpDir)
@@ -100,7 +100,7 @@ func TestCLI_AddCommand(t *testing.T) {
 
 	// Execute CLI command: todo add "Buy groceries"
 	// Use --file flag to specify test-specific location
-	todoPath := filepath.Join(tmpDir, "todo.md")
+	todoPath := filepath.Join(tmpDir, "todos.md")
 	cmd := NewRootCmd()
 	cmd.SetArgs([]string{"--config", tmpDir, "--file", todoPath, "add", "Buy groceries"})
 
@@ -128,7 +128,7 @@ func TestCLI_AddCommand(t *testing.T) {
 // TestAddCommand_ExactArgs tests that add command requires exactly one argument
 func TestAddCommand_ExactArgs(t *testing.T) {
 	tmpDir := t.TempDir()
-	todoPath := filepath.Join(tmpDir, "todo.md")
+	todoPath := filepath.Join(tmpDir, "todos.md")
 
 	// Setup config file first
 	setupTestConfig(t, tmpDir)
@@ -222,7 +222,7 @@ func TestAddCommand_DefaultPWD(t *testing.T) {
 		require.NoError(t, err, "should restore original directory")
 	}()
 
-	// Execute add without --file flag (should default to todo.md in PWD)
+	// Execute add without --file flag (should default to todos.md from config in PWD)
 	cmd := NewRootCmd()
 	cmd.SetArgs([]string{"--config", tmpDir, "add", "Default PWD todo"})
 
@@ -235,10 +235,10 @@ func TestAddCommand_DefaultPWD(t *testing.T) {
 	err = cmd.Execute()
 	require.NoError(t, err, "add without --file flag should succeed")
 
-	// Verify the todo.md file exists in the current directory (tmpDir)
-	expectedFile := filepath.Join(tmpDir, "todo.md")
+	// Verify the todos.md file exists in the current directory (tmpDir)
+	expectedFile := filepath.Join(tmpDir, "todos.md")
 	_, err = os.Stat(expectedFile)
-	assert.NoError(t, err, "todo.md should be created in current directory")
+	assert.NoError(t, err, "todos.md should be created in current directory")
 
 	// Verify content
 	content, err := os.ReadFile(expectedFile)
@@ -250,7 +250,7 @@ func TestAddCommand_DefaultPWD(t *testing.T) {
 func TestAddCommand_NoConfigError(t *testing.T) {
 	// Use isolated temp directory (but don't create config)
 	tmpDir := t.TempDir()
-	todoPath := filepath.Join(tmpDir, "todo.md")
+	todoPath := filepath.Join(tmpDir, "todos.md")
 
 	// Get a fresh command instance - no config setup
 	cmd := NewRootCmd()
@@ -273,7 +273,7 @@ func TestAddCommand_NoConfigError(t *testing.T) {
 func TestAddCommand_NoConfig_NoUsage(t *testing.T) {
 	// Use isolated temp directory (but don't create config)
 	tmpDir := t.TempDir()
-	todoPath := filepath.Join(tmpDir, "todo.md")
+	todoPath := filepath.Join(tmpDir, "todos.md")
 
 	// Get a fresh command instance - no config setup
 	cmd := NewRootCmd()
@@ -302,7 +302,7 @@ func TestAddCommand_NoConfig_NoUsage(t *testing.T) {
 // TestAddCommand_MissingArgs_ShowsUsage tests that when args are missing, usage docs are shown
 func TestAddCommand_MissingArgs_ShowsUsage(t *testing.T) {
 	tmpDir := t.TempDir()
-	todoPath := filepath.Join(tmpDir, "todo.md")
+	todoPath := filepath.Join(tmpDir, "todos.md")
 
 	// Setup config file first (so config error doesn't mask the args error)
 	setupTestConfig(t, tmpDir)

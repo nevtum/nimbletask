@@ -42,6 +42,12 @@ func TestInitConfigCommand(t *testing.T) {
 	configPath := filepath.Join(configDir, "config.json")
 	_, err = os.Stat(configPath)
 	assert.NoError(t, err, "config.json should be created")
+
+	// Verify config file content
+	configData, err := os.ReadFile(configPath)
+	require.NoError(t, err, "should be able to read config file")
+	assert.Contains(t, string(configData), `"filename"`, "config should contain filename field")
+	assert.Contains(t, string(configData), `"todos.md"`, "config should contain default filename value")
 }
 
 // TestInitConfig_CreatesParentDirectories tests that init-config creates
@@ -75,6 +81,12 @@ func TestInitConfig_CreatesParentDirectories(t *testing.T) {
 	configPath := filepath.Join(configDir, "config.json")
 	_, err = os.Stat(configPath)
 	assert.NoError(t, err, "config.json should be created in new directory")
+
+	// Verify config file content
+	configData, err := os.ReadFile(configPath)
+	require.NoError(t, err, "should be able to read config file")
+	assert.Contains(t, string(configData), `"filename"`, "config should contain filename field")
+	assert.Contains(t, string(configData), `"todos.md"`, "config should contain default filename value")
 }
 
 // TestInitConfig_Idempotent tests that init-config can be run multiple times
@@ -97,4 +109,10 @@ func TestInitConfig_Idempotent(t *testing.T) {
 	configPath := filepath.Join(tmpDir, "config.json")
 	_, err = os.Stat(configPath)
 	assert.NoError(t, err, "config.json should still exist")
+
+	// Verify config file content
+	configData, err := os.ReadFile(configPath)
+	require.NoError(t, err, "should be able to read config file")
+	assert.Contains(t, string(configData), `"filename"`, "config should contain filename field")
+	assert.Contains(t, string(configData), `"todos.md"`, "config should contain default filename value")
 }
