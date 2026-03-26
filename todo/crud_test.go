@@ -258,6 +258,7 @@ func TestGetChildren(t *testing.T) {
 		assert.NoError(t, err, "GetChildren failed")
 		assert.Len(t, children, 2, "Expected 2 children")
 	})
+
 	t.Run("fails to retrieve childrin of a non-existent todo", func(t *testing.T) {
 		children, err := tl.GetChildren("non-existent")
 		assert.Error(t, err, "Expected error when retrieving children of non-existent todo")

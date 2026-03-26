@@ -141,7 +141,6 @@ func TestCompleteCommand(t *testing.T) {
 	}
 }
 
-/*
 // TestCompleteCommand_MissingArgs tests that complete command requires exactly one argument (the ID)
 func TestCompleteCommand_MissingArgs(t *testing.T) {
 	tmpDir := t.TempDir()
@@ -167,6 +166,7 @@ func TestCompleteCommand_MissingArgs(t *testing.T) {
 	assert.Contains(t, err.Error(), "accepts 1 arg(s), received 0", "error should mention argument count")
 }
 
+/*
 // TestCompleteCommand_NoConfigError tests that complete returns error when config file doesn't exist
 func TestCompleteCommand_NoConfigError(t *testing.T) {
 	// Use isolated temp directory (but don't create config)

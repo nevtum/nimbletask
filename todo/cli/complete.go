@@ -2,6 +2,7 @@ package cli
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"todo_cli/todo"
@@ -22,8 +23,10 @@ func CompleteCmd() *cobra.Command {
 // CompleteCmdFunc returns a RunE function for the complete command
 func CompleteCmdFunc() func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
-		// TODO: Add argument validation: if len(args) != 1, return error
-		// Removed untested error handling for coverage improvement
+		// Manual arg validation - shows usage when args are missing
+		if len(args) != 1 {
+			return fmt.Errorf("accepts 1 arg(s), received %d", len(args))
+		}
 
 		// Check for config file first
 		configPath := filepath.Join(configRoot, "config.json")
