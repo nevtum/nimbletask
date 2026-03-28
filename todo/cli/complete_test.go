@@ -166,7 +166,6 @@ func TestCompleteCommand_MissingArgs(t *testing.T) {
 	assert.Contains(t, err.Error(), "accepts 1 arg(s), received 0", "error should mention argument count")
 }
 
-/*
 // TestCompleteCommand_NoConfigError tests that complete returns error when config file doesn't exist
 func TestCompleteCommand_NoConfigError(t *testing.T) {
 	// Use isolated temp directory (but don't create config)
@@ -190,6 +189,7 @@ func TestCompleteCommand_NoConfigError(t *testing.T) {
 	assert.Contains(t, err.Error(), "init-config must be called first", "error should mention init-config")
 }
 
+/*
 // TestCompleteCommand_AlreadyCompleted tests that completing an already completed todo succeeds (idempotent)
 func TestCompleteCommand_AlreadyCompleted(t *testing.T) {
 	// Use isolated temp directory

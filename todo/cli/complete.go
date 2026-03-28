@@ -30,8 +30,10 @@ func CompleteCmdFunc() func(cmd *cobra.Command, args []string) error {
 
 		// Check for config file first
 		configPath := filepath.Join(configRoot, "config.json")
-		// TODO: Add config file existence check
-		// Removed untested error handling: if _, err := os.Stat(configPath); os.IsNotExist(err) { return error }
+		if _, err := os.Stat(configPath); os.IsNotExist(err) {
+			cmd.SilenceUsage = true
+			return fmt.Errorf("config file not found at %s: init-config must be called first", configPath)
+		}
 		configData, _ := os.ReadFile(configPath)
 
 		var config Config
