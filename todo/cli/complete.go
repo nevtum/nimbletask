@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -28,18 +27,10 @@ func CompleteCmdFunc() func(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("accepts 1 arg(s), received %d", len(args))
 		}
 
-		// Check for config file first
-		configPath := filepath.Join(configRoot, "config.json")
-		if _, err := os.Stat(configPath); os.IsNotExist(err) {
-			cmd.SilenceUsage = true
-			return fmt.Errorf("config file not found at %s: init-config must be called first", configPath)
+		config, err := loadConfig(cmd)
+		if err != nil {
+			return err
 		}
-		configData, _ := os.ReadFile(configPath)
-
-		var config Config
-		// TODO: Add config JSON parse error handling
-		// Removed untested error handling: if err := json.Unmarshal(...); err != nil { return error }
-		_ = json.Unmarshal(configData, &config)
 
 		// Determine todoPath if not set via flag - default to filename from config in PWD
 		if todoPath == "" {
