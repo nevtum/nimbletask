@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 )
 
@@ -20,6 +22,7 @@ func ListCmdFunc() func(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
+		fmt.Fprintln(cmd.OutOrStdout(), "No todos found")
 		return nil
 	}
 }

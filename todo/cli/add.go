@@ -86,7 +86,7 @@ func AddCmdFunc() func(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		fmt.Printf("Todo created! ID is %s\n", todoItem.ID)
+		fmt.Fprintf(cmd.OutOrStdout(), "Todo created! ID is %s\n", todoItem.ID)
 		return nil
 	}
 }

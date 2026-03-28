@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 /*
@@ -70,7 +71,6 @@ func TestListCommand_NoConfigError(t *testing.T) {
 	assert.Contains(t, err.Error(), "init-config must be called first", "error should mention init-config")
 }
 
-/*
 // TestListCommand_EmptyList tests that list handles empty todo list gracefully
 func TestListCommand_EmptyList(t *testing.T) {
 	// Use isolated temp directory
@@ -86,9 +86,7 @@ func TestListCommand_EmptyList(t *testing.T) {
 	// Verify: Command should succeed even with empty list
 	require.NoError(t, err, "list command should succeed with empty list")
 
-	// Output should be empty or indicate no todos
 	output := out.String()
-	// Empty output is acceptable, or a message like "No todos found"
-	_ = output
+	// Output should indicate no todos
+	assert.Equal(t, "No todos found\n", output)
 }
-*/

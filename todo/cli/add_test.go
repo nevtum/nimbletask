@@ -92,10 +92,11 @@ func TestCLI_AddCommand(t *testing.T) {
 	// Execute CLI command: todo add "Buy groceries"
 	// Use --file flag to specify test-specific location
 	todoPath := filepath.Join(tmpDir, "todos.md")
-	_, err := runCmd(t, "--config", tmpDir, "--file", todoPath, "add", "Buy groceries")
+	out, err := runCmd(t, "--config", tmpDir, "--file", todoPath, "add", "Buy groceries")
 
 	// Should succeed without error
 	require.NoError(t, err, "CLI command should complete without error")
+	assert.Contains(t, out.String(), "Todo created", "output should contain a success message")
 
 	// Verify the todo list file exists
 	_, err = os.Stat(todoPath)
