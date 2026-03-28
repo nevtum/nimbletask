@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"todo_cli/todo"
 
+	"github.com/nevtum/nimbletask/todo"
 	"github.com/spf13/cobra"
 )
 

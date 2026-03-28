@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"todo_cli/todo"
 
+	"github.com/nevtum/nimbletask/todo"
 	"github.com/spf13/cobra"
 )
 

@@ -1,4 +1,4 @@
-module todo_cli
+module github.com/nevtum/nimbletask
 
 go 1.24.3
 
