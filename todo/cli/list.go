@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"todo_cli/todo"
 
 	"github.com/spf13/cobra"
@@ -56,7 +57,8 @@ func displayTodos(out io.Writer, todos []*todo.Todo, prefix string) {
 		if prefix == "" {
 			number = fmt.Sprintf("%d.", i+1)
 		} else {
-			number = fmt.Sprintf("%s.%d", prefix, i+1)
+			// Remove trailing dot from prefix to avoid double dots (e.g., "1..1" instead of "1.1")
+			number = fmt.Sprintf("%s.%d", strings.TrimSuffix(prefix, "."), i+1)
 		}
 
 		// Build checkbox

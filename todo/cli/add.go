@@ -14,6 +14,9 @@ import (
 // priorityFlag is the local flag variable for the --priority flag
 var priorityFlag int
 
+// parentFlag is the local flag variable for the --parent flag
+var parentFlag string
+
 // AddCmd returns a *cobra.Command instance for the add command
 // Uses global variables configRoot and todoPath
 func AddCmd() *cobra.Command {
@@ -25,6 +28,9 @@ func AddCmd() *cobra.Command {
 
 	// Add --priority flag: priority level for the new todo (overrides config default)
 	cmd.Flags().IntVar(&priorityFlag, "priority", 0, "Priority level for the new todo (overrides config default)")
+
+	// Add --parent flag: parent ID for creating hierarchical todos
+	cmd.Flags().StringVar(&parentFlag, "parent", "", "Parent todo ID for hierarchical structure")
 
 	return cmd
 }
@@ -56,8 +62,8 @@ func AddCmdFunc() func(cmd *cobra.Command, args []string) error {
 		// Extract title from args
 		title := args[0]
 
-		// Add the todo (no parent, append to end)
-		todoItem, err := tl.Add(title, "", -1)
+		// Add the todo (use parent flag if provided, otherwise root level)
+		todoItem, err := tl.Add(title, parentFlag, -1)
 		if err != nil {
 			return err
 		}
