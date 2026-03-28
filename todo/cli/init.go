@@ -2,6 +2,7 @@ package cli
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -26,6 +27,12 @@ func InitCmdFunc() func(cmd *cobra.Command, args []string) error {
 
 		bytes, _ := json.Marshal(defaultConfig())
 		configPath := filepath.Join(configRoot, "config.json")
-		return os.WriteFile(configPath, bytes, 0644)
+		err := os.WriteFile(configPath, bytes, 0644)
+		if err != nil {
+			return err
+		}
+
+		fmt.Fprintf(cmd.OutOrStdout(), "Config file created at %s\n", configPath)
+		return nil
 	}
 }
