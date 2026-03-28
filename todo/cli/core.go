@@ -1,8 +1,10 @@
 package cli
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"todo_cli/todo"
 
 	"github.com/spf13/cobra"
 )
@@ -38,4 +40,17 @@ func NewRootCmd() *cobra.Command {
 	rootCmd.AddCommand(ListCmd())
 
 	return rootCmd
+}
+
+// loadTodoList creates a new TodoList and loads it from the given file path.
+// Returns a friendly error message if loading fails (e.g., permission issues, corruption).
+func loadTodoList(path string) (*todo.TodoList, *todo.File, error) {
+	tl := todo.NewTodoList()
+
+	file := todo.NewFile(path)
+	if err := tl.Load(file); err != nil {
+		return nil, nil, fmt.Errorf("cannot load todos: %w", err)
+	}
+
+	return tl, file, nil
 }

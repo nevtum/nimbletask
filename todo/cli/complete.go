@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"todo_cli/todo"
 
 	"github.com/spf13/cobra"
 )
@@ -40,13 +39,9 @@ func CompleteCmdFunc() func(cmd *cobra.Command, args []string) error {
 			todoPath = filepath.Join(cwd, config.Filename)
 		}
 
-		// Create a new todo list and load from file
-		tl := todo.NewTodoList()
-
-		file := todo.NewFile(todoPath)
-		// TODO: Add todo list load error handling
-		// Removed untested error handling: if err := tl.Load(file); err != nil { return error }
-		_ = tl.Load(file)
+		// Load todo list from file
+		// TODO: Add error handling for file load errors (e.g., permission issues, corruption)
+		tl, file, _ := loadTodoList(todoPath)
 
 		// Extract todo ID from args
 		todoID := args[0]
