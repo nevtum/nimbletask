@@ -116,3 +116,11 @@ func withCycle(nodeAID, nodeBID, nodeCID string) Option {
 		nodeC.Children = append(nodeC.Children, nodeA)
 	}
 }
+
+func newTestTodoList(options ...Option) *TodoList {
+	tl := NewTodoList(NewFakeFile())
+	for _, opt := range options {
+		opt(tl)
+	}
+	return tl
+}
