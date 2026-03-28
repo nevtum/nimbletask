@@ -68,7 +68,7 @@ func displayTodos(out io.Writer, todos []*todo.Todo, prefix string) {
 		}
 
 		// Format: "1. [ ] ID Title"
-		line := fmt.Sprintf("%s %s %s %s\n", number, checkbox, t.ID, t.Title)
+		line := fmt.Sprintf("%s %s <id:%s> %s\n", number, checkbox, t.ID, t.Title)
 		out.Write([]byte(line))
 
 		// Recursively display children with updated prefix

@@ -15,8 +15,8 @@ import (
 // the list command - validating that users can view their hierarchical todos.
 //
 // According to the spec, the default display format should be:
-//  1. [ ] V1StGXR8_Z5jd Project Proposal
-//     1.1. [x] wH9mK2pL4nQ7 Research
+//  1. [ ] <id:V1StGXR8_Z5jd> Project Proposal
+//     1.1. [x] <id:wH9mK2pL4nQ7> Research
 //
 // This test establishes the core read operation that all other list features
 // build upon.

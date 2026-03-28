@@ -142,10 +142,10 @@ todo help --examples
 ```bash
 $ todo list
 
-1. [ ] V1StGXR8_Z5jd Project Proposal
-   1.1. [x] wH9mK2pL4nQ7 Research
-        1.1.1. [x] bX5vC3jN8kM1 Review sources
-   1.2. [ ] yZ4wE6hJ9lP2 Draft
+1. [ ] <id:V1StGXR8_Z5jd> Project Proposal
+   1.1. [x] <id:wH9mK2pL4nQ7> Research
+        1.1.1. [x] <id:bX5vC3jN8kM1> Review sources
+   1.2. [ ] <id:yZ4wE6hJ9lP2> Draft
 ```
 
 **2. JSON Tree (--format json)**
