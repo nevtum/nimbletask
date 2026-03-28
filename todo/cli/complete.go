@@ -40,9 +40,6 @@ func CompleteCmdFunc() func(cmd *cobra.Command, args []string) error {
 			todoPath = filepath.Join(cwd, config.Filename)
 		}
 
-		// Extract todo ID from args
-		todoID := args[0]
-
 		// Create a new todo list and load from file
 		tl := todo.NewTodoList()
 
@@ -50,6 +47,9 @@ func CompleteCmdFunc() func(cmd *cobra.Command, args []string) error {
 		// TODO: Add todo list load error handling
 		// Removed untested error handling: if err := tl.Load(file); err != nil { return error }
 		_ = tl.Load(file)
+
+		// Extract todo ID from args
+		todoID := args[0]
 
 		// Mark the todo as complete
 		if err := tl.Complete(todoID); err != nil {

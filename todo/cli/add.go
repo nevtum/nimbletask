@@ -49,15 +49,15 @@ func AddCmdFunc() func(cmd *cobra.Command, args []string) error {
 			todoPath = filepath.Join(cwd, config.Filename)
 		}
 
-		// Extract title from args
-		title := args[0]
-
 		// Create a new todo list
 		tl := todo.NewTodoList()
 
 		file := todo.NewFile(todoPath)
 		// TODO: Add test coverage for file load errors (e.g., permission issues, corruption)
 		_ = tl.Load(file)
+
+		// Extract title from args
+		title := args[0]
 
 		// Add the todo (no parent, append to end)
 		todoItem, err := tl.Add(title, "", -1)
