@@ -54,17 +54,7 @@ func TestAddCommand(t *testing.T) {
 			// Setup config file first
 			setupTestConfig(t, tmpDir)
 
-			// Get a fresh command instance for add with custom file path
-			addCmd := NewRootCmd()
-			addCmd.SetArgs([]string{"--config", tmpDir, "--file", todoFile, "add", tt.title})
-
-			// Capture output
-			var out bytes.Buffer
-			addCmd.SetOut(&out)
-			addCmd.SetErr(&out)
-
-			// Execute add command
-			err := addCmd.Execute()
+			_, err := runCmd(t, "--config", tmpDir, "--file", todoFile, "add", tt.title)
 
 			// Verify error expectations
 			if tt.wantErr {
@@ -102,16 +92,7 @@ func TestCLI_AddCommand(t *testing.T) {
 	// Execute CLI command: todo add "Buy groceries"
 	// Use --file flag to specify test-specific location
 	todoPath := filepath.Join(tmpDir, "todos.md")
-	cmd := NewRootCmd()
-	cmd.SetArgs([]string{"--config", tmpDir, "--file", todoPath, "add", "Buy groceries"})
-
-	// Capture output
-	var out bytes.Buffer
-	cmd.SetOut(&out)
-	cmd.SetErr(&out)
-
-	// Execute command
-	err := cmd.Execute()
+	_, err := runCmd(t, "--config", tmpDir, "--file", todoPath, "add", "Buy groceries")
 
 	// Should succeed without error
 	require.NoError(t, err, "CLI command should complete without error")
@@ -134,17 +115,7 @@ func TestAddCommand_ExactArgs(t *testing.T) {
 	// Setup config file first
 	setupTestConfig(t, tmpDir)
 
-	// Get a fresh command instance
-	cmd := NewRootCmd()
-	cmd.SetArgs([]string{"--config", tmpDir, "--file", todoPath, "add"})
-
-	// Capture output
-	var out bytes.Buffer
-	cmd.SetOut(&out)
-	cmd.SetErr(&out)
-
-	// Execute without arguments
-	err := cmd.Execute()
+	_, err := runCmd(t, "--config", tmpDir, "--file", todoPath, "add")
 
 	// Should error due to missing argument
 	assert.Error(t, err, "add without arguments should error")
@@ -153,16 +124,7 @@ func TestAddCommand_ExactArgs(t *testing.T) {
 
 // TestRootCmd_NoSubcommand tests that running `todo` without subcommand shows help
 func TestRootCmd_NoSubcommand(t *testing.T) {
-	// Get a fresh command instance
-	cmd := NewRootCmd()
-
-	// Capture output
-	var buf bytes.Buffer
-	cmd.SetOut(&buf)
-	cmd.SetErr(&buf)
-
-	// Execute without subcommand
-	err := cmd.Execute()
+	buf, err := runCmd(t)
 
 	// Should not error (shows help)
 	assert.NoError(t, err, "root command without args should show help")
@@ -183,16 +145,7 @@ func TestAddCommand_WithCustomFileFlag(t *testing.T) {
 	setupTestConfig(t, tmpDir)
 
 	// Execute add with custom file path
-	cmd := NewRootCmd()
-	cmd.SetArgs([]string{"--config", tmpDir, "--file", customFile, "add", "Custom file todo"})
-
-	// Capture output
-	var out bytes.Buffer
-	cmd.SetOut(&out)
-	cmd.SetErr(&out)
-
-	// Execute command
-	err := cmd.Execute()
+	_, err := runCmd(t, "--config", tmpDir, "--file", customFile, "add", "Custom file todo")
 	require.NoError(t, err, "add with custom file should succeed")
 
 	// Verify the custom file exists
@@ -224,16 +177,7 @@ func TestAddCommand_DefaultPWD(t *testing.T) {
 	}()
 
 	// Execute add without --file flag (should default to todos.md from config in PWD)
-	cmd := NewRootCmd()
-	cmd.SetArgs([]string{"--config", tmpDir, "add", "Default PWD todo"})
-
-	// Capture output
-	var out bytes.Buffer
-	cmd.SetOut(&out)
-	cmd.SetErr(&out)
-
-	// Execute command
-	err = cmd.Execute()
+	_, err = runCmd(t, "--config", tmpDir, "add", "Default PWD todo")
 	require.NoError(t, err, "add without --file flag should succeed")
 
 	// Verify the todos.md file exists in the current directory (tmpDir)
@@ -253,17 +197,7 @@ func TestAddCommand_NoConfigError(t *testing.T) {
 	tmpDir := t.TempDir()
 	todoPath := filepath.Join(tmpDir, "todos.md")
 
-	// Get a fresh command instance - no config setup
-	cmd := NewRootCmd()
-	cmd.SetArgs([]string{"--config", tmpDir, "--file", todoPath, "add", "Test todo"})
-
-	// Capture output
-	var out bytes.Buffer
-	cmd.SetOut(&out)
-	cmd.SetErr(&out)
-
-	// Execute command
-	err := cmd.Execute()
+	_, err := runCmd(t, "--config", tmpDir, "--file", todoPath, "add", "Test todo")
 
 	// Should error due to missing config
 	assert.Error(t, err, "add should return error when config doesn't exist")
@@ -276,17 +210,8 @@ func TestAddCommand_NoConfig_NoUsage(t *testing.T) {
 	tmpDir := t.TempDir()
 	todoPath := filepath.Join(tmpDir, "todos.md")
 
-	// Get a fresh command instance - no config setup
-	cmd := NewRootCmd()
-	cmd.SetArgs([]string{"--config", tmpDir, "--file", todoPath, "add", "Test todo"})
-
-	// Capture output
-	var out bytes.Buffer
-	cmd.SetOut(&out)
-	cmd.SetErr(&out)
-
-	// Execute command
-	err := cmd.Execute()
+	// Execute command with runCmd helper - no config setup
+	out, err := runCmd(t, "--config", tmpDir, "--file", todoPath, "add", "Test todo")
 
 	// Should error
 	require.Error(t, err, "add should return error when config doesn't exist")
@@ -308,17 +233,8 @@ func TestAddCommand_MissingArgs_ShowsUsage(t *testing.T) {
 	// Setup config file first (so config error doesn't mask the args error)
 	setupTestConfig(t, tmpDir)
 
-	// Get a fresh command instance - no title argument
-	cmd := NewRootCmd()
-	cmd.SetArgs([]string{"--config", tmpDir, "--file", todoPath, "add"})
-
-	// Capture output
-	var out bytes.Buffer
-	cmd.SetOut(&out)
-	cmd.SetErr(&out)
-
-	// Execute without arguments
-	err := cmd.Execute()
+	// Execute without arguments using runCmd helper
+	out, err := runCmd(t, "--config", tmpDir, "--file", todoPath, "add")
 
 	// Should error due to missing argument
 	require.Error(t, err, "add without arguments should error")
@@ -343,32 +259,12 @@ func TestAddCommand_MalformedConfig(t *testing.T) {
 	err = os.WriteFile(configPath, []byte(`{invalid json}`), 0644)
 	require.NoError(t, err, "should create malformed config file")
 
-	// Get a fresh command instance
-	cmd := NewRootCmd()
-	cmd.SetArgs([]string{"--config", tmpDir, "--file", todoPath, "add", "Test todo"})
-
-	// Capture output
-	var out bytes.Buffer
-	cmd.SetOut(&out)
-	cmd.SetErr(&out)
-
-	// Execute command
-	err = cmd.Execute()
+	// Execute command using runCmd helper
+	_, err = runCmd(t, "--config", tmpDir, "--file", todoPath, "add", "Test todo")
 
 	// Should error due to malformed config
 	require.Error(t, err, "add should return error when config file has malformed JSON")
 	assert.Contains(t, err.Error(), "failed to parse config file", "error should mention config file parsing")
-}
-
-// setupTestConfigWithPriority creates a config file with specified default_priority
-func setupTestConfigWithPriority(t *testing.T, configDir string, priority int) {
-	t.Helper()
-	configPath := filepath.Join(configDir, "config.json")
-	err := os.MkdirAll(configDir, 0755)
-	require.NoError(t, err, "should create config directory")
-	configContent := fmt.Sprintf(`{"filename": "todos.md", "default_priority": %d}`, priority)
-	err = os.WriteFile(configPath, []byte(configContent), 0644)
-	require.NoError(t, err, "should create config file with default_priority")
 }
 
 // TestAddCommand_UsesDefaultPriorityFromConfig verifies that the add command
@@ -383,16 +279,7 @@ func TestAddCommand_UsesDefaultPriorityFromConfig(t *testing.T) {
 	setupTestConfigWithPriority(t, tmpDir, 3)
 
 	// Execute add without --priority flag (should use default from config)
-	cmd := NewRootCmd()
-	cmd.SetArgs([]string{"--config", tmpDir, "--file", todoPath, "add", "Priority test todo"})
-
-	// Capture output
-	var out bytes.Buffer
-	cmd.SetOut(&out)
-	cmd.SetErr(&out)
-
-	// Execute command
-	err := cmd.Execute()
+	_, err := runCmd(t, "--config", tmpDir, "--file", todoPath, "add", "Priority test todo")
 	require.NoError(t, err, "add should complete without error")
 
 	// Verify the todo list file exists
@@ -421,16 +308,7 @@ func TestAddCommand_WithPriorityFlag(t *testing.T) {
 	setupTestConfigWithPriority(t, tmpDir, 3)
 
 	// Execute add with --priority flag (should override config default)
-	cmd := NewRootCmd()
-	cmd.SetArgs([]string{"--config", tmpDir, "--file", todoPath, "add", "Priority flag todo", "--priority", "5"})
-
-	// Capture output
-	var out bytes.Buffer
-	cmd.SetOut(&out)
-	cmd.SetErr(&out)
-
-	// Execute command
-	err := cmd.Execute()
+	_, err := runCmd(t, "--config", tmpDir, "--file", todoPath, "add", "Priority flag todo", "--priority", "5")
 	require.NoError(t, err, "add with --priority flag should succeed")
 
 	// Verify the todo list file exists
@@ -445,4 +323,28 @@ func TestAddCommand_WithPriorityFlag(t *testing.T) {
 	assert.Contains(t, contentStr, "Priority flag todo", "todo file should contain the todo title")
 	assert.Contains(t, contentStr, "priority:5", "todo should have priority from CLI flag (5), not config default (3)")
 	assert.NotContains(t, contentStr, "priority:3", "todo should NOT have config default priority when flag is provided")
+}
+
+// setupTestConfigWithPriority creates a config file with specified default_priority
+func setupTestConfigWithPriority(t *testing.T, configDir string, priority int) {
+	t.Helper()
+	configPath := filepath.Join(configDir, "config.json")
+	err := os.MkdirAll(configDir, 0755)
+	require.NoError(t, err, "should create config directory")
+	configContent := fmt.Sprintf(`{"filename": "todos.md", "default_priority": %d}`, priority)
+	err = os.WriteFile(configPath, []byte(configContent), 0644)
+	require.NoError(t, err, "should create config file with default_priority")
+}
+
+// runCmd runs the CLI command with the given arguments
+// and returns the output buffer and error
+func runCmd(t *testing.T, args ...string) (bytes.Buffer, error) {
+	t.Helper()
+	var out bytes.Buffer
+	cmd := NewRootCmd()
+	cmd.SetArgs(args)
+	cmd.SetOut(&out)
+	cmd.SetErr(&out)
+	err := cmd.Execute()
+	return out, err
 }

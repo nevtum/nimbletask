@@ -55,14 +55,7 @@ func TestCompleteCommand(t *testing.T) {
 			if len(tt.setupTodos) > 0 {
 				// Create todos using add command
 				for i, title := range tt.setupTodos {
-					cmd := NewRootCmd()
-					cmd.SetArgs([]string{"--config", tmpDir, "--file", todoPath, "add", title})
-
-					var out bytes.Buffer
-					cmd.SetOut(&out)
-					cmd.SetErr(&out)
-
-					err := cmd.Execute()
+					_, err := runCmd(t, "--config", tmpDir, "--file", todoPath, "add", title)
 					require.NoError(t, err, "setup: add command should succeed for todo %d", i)
 				}
 
@@ -89,16 +82,7 @@ func TestCompleteCommand(t *testing.T) {
 			}
 
 			// Execute: Run complete command
-			completeCmd := NewRootCmd()
-			completeCmd.SetArgs([]string{"--config", tmpDir, "--file", todoPath, "complete", completeID})
-
-			// Capture output
-			var out bytes.Buffer
-			completeCmd.SetOut(&out)
-			completeCmd.SetErr(&out)
-
-			// Execute command
-			err := completeCmd.Execute()
+			_, err := runCmd(t, "--config", tmpDir, "--file", todoPath, "complete", completeID)
 
 			// Verify error expectations
 			if tt.wantErr {
@@ -149,17 +133,8 @@ func TestCompleteCommand_MissingArgs(t *testing.T) {
 	// Setup config file first
 	setupTestConfig(t, tmpDir)
 
-	// Get a fresh command instance - no ID argument
-	cmd := NewRootCmd()
-	cmd.SetArgs([]string{"--config", tmpDir, "--file", todoPath, "complete"})
-
-	// Capture output
-	var out bytes.Buffer
-	cmd.SetOut(&out)
-	cmd.SetErr(&out)
-
-	// Execute without arguments
-	err := cmd.Execute()
+	// Run command - no ID argument
+	_, err := runCmd(t, "--config", tmpDir, "--file", todoPath, "complete")
 
 	// Should error due to missing argument
 	assert.Error(t, err, "complete without arguments should error")
@@ -172,24 +147,14 @@ func TestCompleteCommand_NoConfigError(t *testing.T) {
 	tmpDir := t.TempDir()
 	todoPath := filepath.Join(tmpDir, "todos.md")
 
-	// Get a fresh command instance - no config setup
-	cmd := NewRootCmd()
-	cmd.SetArgs([]string{"--config", tmpDir, "--file", todoPath, "complete", "some-id"})
-
-	// Capture output
-	var out bytes.Buffer
-	cmd.SetOut(&out)
-	cmd.SetErr(&out)
-
-	// Execute command
-	err := cmd.Execute()
+	// Run command - no config setup
+	_, err := runCmd(t, "--config", tmpDir, "--file", todoPath, "complete", "some-id")
 
 	// Should error due to missing config
 	assert.Error(t, err, "complete should return error when config doesn't exist")
 	assert.Contains(t, err.Error(), "init-config must be called first", "error should mention init-config")
 }
 
-/*
 // TestCompleteCommand_AlreadyCompleted tests that completing an already completed todo succeeds (idempotent)
 func TestCompleteCommand_AlreadyCompleted(t *testing.T) {
 	// Use isolated temp directory
@@ -200,14 +165,7 @@ func TestCompleteCommand_AlreadyCompleted(t *testing.T) {
 	setupTestConfig(t, tmpDir)
 
 	// Setup: Create a todo
-	addCmd := NewRootCmd()
-	addCmd.SetArgs([]string{"--config", tmpDir, "--file", todoPath, "add", "Already done task"})
-
-	var out bytes.Buffer
-	addCmd.SetOut(&out)
-	addCmd.SetErr(&out)
-
-	err := addCmd.Execute()
+	_, err := runCmd(t, "--config", tmpDir, "--file", todoPath, "add", "Already done task")
 	require.NoError(t, err, "add command should succeed")
 
 	// Extract the ID from the file
@@ -220,17 +178,11 @@ func TestCompleteCommand_AlreadyCompleted(t *testing.T) {
 	todoID := matches[1]
 
 	// First complete
-	completeCmd1 := NewRootCmd()
-	completeCmd1.SetArgs([]string{"--config", tmpDir, "--file", todoPath, "complete", todoID})
-	err = completeCmd1.Execute()
+	_, err = runCmd(t, "--config", tmpDir, "--file", todoPath, "complete", todoID)
 	require.NoError(t, err, "first complete should succeed")
-
 	// Second complete (already completed)
-	completeCmd2 := NewRootCmd()
-	completeCmd2.SetArgs([]string{"--config", tmpDir, "--file", todoPath, "complete", todoID})
-	err = completeCmd2.Execute()
+	_, err = runCmd(t, "--config", tmpDir, "--file", todoPath, "complete", todoID)
 
 	// Should succeed (idempotent)
 	assert.NoError(t, err, "completing already-completed todo should succeed")
 }
-*/
