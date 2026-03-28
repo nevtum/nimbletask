@@ -2,13 +2,13 @@ package cli
 
 import (
 	"path/filepath"
+	"regexp"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-/*
 // TestListCommand_DisplaysTodos verifies that the list command displays todos
 // in the numbered path format as specified. This is the foundational test for
 // the list command - validating that users can view their hierarchical todos.
@@ -55,7 +55,6 @@ func TestListCommand_DisplaysTodos(t *testing.T) {
 	assert.Contains(t, output, "Project Proposal", "output should contain first todo title")
 	assert.Contains(t, output, "Second Task", "output should contain second todo title")
 }
-*/
 
 // TestListCommand_NoConfigError tests that list returns error when config file doesn't exist
 func TestListCommand_NoConfigError(t *testing.T) {
