@@ -538,3 +538,9 @@ func TestSaveToNonExistentDirectory(t *testing.T) {
 	_, err = os.Stat(filePath)
 	assert.NoError(t, err)
 }
+
+func TestErrorWhenFileIsNotProvided(t *testing.T) {
+	tl := NewTodoList(nil)
+	err := tl.Save()
+	assert.ErrorContains(t, err, "no file associated with TodoList")
+}
