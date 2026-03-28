@@ -86,7 +86,7 @@ type TodoList struct {
 	todos map[string]*Todo
 	roots []*Todo
 	clock Clock
-	file  FileDescriptor
+	file  AbstractFile
 }
 
 // TodoUpdate represents update fields for a todo
@@ -102,7 +102,7 @@ type TodoUpdate struct {
 type Option func(*TodoList)
 
 // NewTodoList creates a new empty todo list
-func NewTodoList(file FileDescriptor, options ...Option) *TodoList {
+func NewTodoList(file AbstractFile, options ...Option) *TodoList {
 	tl := &TodoList{
 		todos: make(map[string]*Todo),
 		roots: []*Todo{},

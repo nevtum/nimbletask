@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 )
 
-type FileDescriptor interface {
+type AbstractFile interface {
 	Load() (string, error)
 	Save(string) error
 }
@@ -80,6 +80,7 @@ func pathToWriter(path string) (io.Writer, error) {
 	return f, nil
 }
 
+// FakeFile is a fake implementation of File for testing purposes.
 type FakeFile struct {
 	content string
 }

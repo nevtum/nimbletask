@@ -18,7 +18,7 @@ func strPtr(s string) *string { return &s }
 func intPtr(i int) *int       { return &i }
 
 // roundTrip saves tl1 to a temp file, loads it back, and returns the loaded list
-func roundTrip(t *testing.T, tl1 *TodoList, file FileDescriptor) *TodoList {
+func roundTrip(t *testing.T, tl1 *TodoList, file AbstractFile) *TodoList {
 	t.Helper()
 
 	err := tl1.Save()
