@@ -27,7 +27,7 @@ func NewRootCmd() *cobra.Command {
 	}
 
 	// Determine default config root (user's config directory)
-	defaultConfigRoot := filepath.Join(os.Getenv("HOME"), ".config", "todos")
+	defaultConfigRoot := filepath.Join(os.Getenv("HOME"), ".config", "nimbletask")
 
 	// Persistent flags available to all subcommands
 	rootCmd.PersistentFlags().StringVar(&configRoot, "config", defaultConfigRoot, "Configuration directory root")
