@@ -26,7 +26,7 @@ func loadConfig(cmd *cobra.Command) (*Config, error) {
 	configPath := filepath.Join(configRoot, "config.json")
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		cmd.SilenceUsage = true
-		return nil, fmt.Errorf("config file not found at %s: init-config must be called first", configPath)
+		return nil, fmt.Errorf("config file not found at %s: init must be called first", configPath)
 	}
 
 	// Read and parse config file

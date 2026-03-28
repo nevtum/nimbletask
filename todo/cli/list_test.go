@@ -68,7 +68,7 @@ func TestListCommand_NoConfigError(t *testing.T) {
 
 	// Should error due to missing config
 	assert.Error(t, err, "list should return error when config doesn't exist")
-	assert.Contains(t, err.Error(), "init-config must be called first", "error should mention init-config")
+	assert.Contains(t, err.Error(), "init must be called first", "error should mention init")
 }
 
 // TestListCommand_EmptyList tests that list handles empty todo list gracefully

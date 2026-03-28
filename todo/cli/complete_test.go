@@ -152,7 +152,7 @@ func TestCompleteCommand_NoConfigError(t *testing.T) {
 
 	// Should error due to missing config
 	assert.Error(t, err, "complete should return error when config doesn't exist")
-	assert.Contains(t, err.Error(), "init-config must be called first", "error should mention init-config")
+	assert.Contains(t, err.Error(), "init must be called first", "error should mention init")
 }
 
 // TestCompleteCommand_AlreadyCompleted tests that completing an already completed todo succeeds (idempotent)

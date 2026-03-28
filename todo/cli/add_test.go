@@ -202,7 +202,7 @@ func TestAddCommand_NoConfigError(t *testing.T) {
 
 	// Should error due to missing config
 	assert.Error(t, err, "add should return error when config doesn't exist")
-	assert.Contains(t, err.Error(), "init-config must be called first", "error should mention init-config")
+	assert.Contains(t, err.Error(), "init must be called first", "error should mention init")
 }
 
 // TestAddCommand_NoConfig_NoUsage tests that when config is missing, only error is shown (no usage docs)
@@ -219,7 +219,7 @@ func TestAddCommand_NoConfig_NoUsage(t *testing.T) {
 
 	// Verify error message is shown
 	output := out.String()
-	assert.Contains(t, output, "init-config must be called first", "error message should be shown")
+	assert.Contains(t, output, "init must be called first", "error message should be shown")
 
 	// Verify usage is NOT shown (SilenceUsage should prevent this)
 	assert.NotContains(t, output, "Usage:", "usage should NOT be shown when config is missing")

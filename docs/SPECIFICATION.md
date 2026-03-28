@@ -14,7 +14,7 @@ Build a Go CLI tool for managing hierarchical todo lists with native markdown pe
   - `default_priority`: Default priority level for new todo items.
 
 ### Initialization Command
-- A command `todo init-config` initializes the global configuration file.
+- A command `todo init` initializes the global configuration file.
 - This command creates the hidden directory `.todo` and generates a default `config.json`.
 
 ### Loading Configuration

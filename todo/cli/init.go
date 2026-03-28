@@ -11,13 +11,13 @@ import (
 
 func InitCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "init-config",
+		Use:   "init",
 		Short: "Initialize the global configuration file",
 		RunE:  InitCmdFunc(),
 	}
 }
 
-// InitCmdFunc returns a RunE function for the init-config command
+// InitCmdFunc returns a RunE function for the init command
 func InitCmdFunc() func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		// Create parent directories if they don't exist

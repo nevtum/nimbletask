@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestInitConfigCommand tests that `todo init-config` creates the global configuration.
+// TestInitConfigCommand tests that `todo init` creates the global configuration.
 // This is the foundational command - all other operations depend on it.
 func TestInitConfigCommand(t *testing.T) {
 	// Use isolated temp directory (safe - no env vars modified)
@@ -19,8 +19,8 @@ func TestInitConfigCommand(t *testing.T) {
 	// Get a fresh command instance
 	cmd := NewRootCmd()
 
-	// Set arguments: init-config with custom config directory
-	cmd.SetArgs([]string{"--config", configDir, "init-config"})
+	// Set arguments: init with custom config directory
+	cmd.SetArgs([]string{"--config", configDir, "init"})
 
 	// Capture output
 	var out bytes.Buffer
@@ -31,7 +31,7 @@ func TestInitConfigCommand(t *testing.T) {
 	err := cmd.Execute()
 
 	// Should succeed without error
-	require.NoError(t, err, "init-config should complete without error")
+	require.NoError(t, err, "init should complete without error")
 
 	// Verify config directory exists
 	info, err := os.Stat(configDir)
@@ -50,7 +50,7 @@ func TestInitConfigCommand(t *testing.T) {
 	assert.Contains(t, string(configData), `"todos.md"`, "config should contain default filename value")
 }
 
-// TestInitConfig_CreatesParentDirectories tests that init-config creates
+// TestInitConfig_CreatesParentDirectories tests that init creates
 // parent directories when they don't exist (fresh install scenario)
 func TestInitConfig_CreatesParentDirectories(t *testing.T) {
 	// Use a nested path that doesn't exist yet - simulating fresh install
@@ -62,15 +62,15 @@ func TestInitConfig_CreatesParentDirectories(t *testing.T) {
 	_, err := os.Stat(configDir)
 	require.True(t, os.IsNotExist(err), "config dir should not exist initially")
 
-	// Execute init-config
+	// Execute init
 	cmd := NewRootCmd()
-	cmd.SetArgs([]string{"--config", configDir, "init-config"})
+	cmd.SetArgs([]string{"--config", configDir, "init"})
 	var out bytes.Buffer
 	cmd.SetOut(&out)
 	cmd.SetErr(&out)
 
 	err = cmd.Execute()
-	require.NoError(t, err, "init-config should create parent directories and succeed")
+	require.NoError(t, err, "init should create parent directories and succeed")
 
 	// Verify config directory was created
 	info, err := os.Stat(configDir)
@@ -89,21 +89,21 @@ func TestInitConfig_CreatesParentDirectories(t *testing.T) {
 	assert.Contains(t, string(configData), `"todos.md"`, "config should contain default filename value")
 }
 
-// TestInitConfig_Idempotent tests that init-config can be run multiple times
+// TestInitConfig_Idempotent tests that init can be run multiple times
 func TestInitConfig_Idempotent(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	// First execution
 	cmd1 := NewRootCmd()
-	cmd1.SetArgs([]string{"--config", tmpDir, "init-config"})
+	cmd1.SetArgs([]string{"--config", tmpDir, "init"})
 	err := cmd1.Execute()
-	require.NoError(t, err, "first init-config should succeed")
+	require.NoError(t, err, "first init should succeed")
 
 	// Second execution - should not fail
 	cmd2 := NewRootCmd()
-	cmd2.SetArgs([]string{"--config", tmpDir, "init-config"})
+	cmd2.SetArgs([]string{"--config", tmpDir, "init"})
 	err = cmd2.Execute()
-	require.NoError(t, err, "second init-config should also succeed (idempotent)")
+	require.NoError(t, err, "second init should also succeed (idempotent)")
 
 	// Verify config still exists
 	configPath := filepath.Join(tmpDir, "config.json")
