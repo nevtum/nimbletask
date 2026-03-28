@@ -18,17 +18,14 @@ func strPtr(s string) *string { return &s }
 func intPtr(i int) *int       { return &i }
 
 // roundTrip saves tl1 to a temp file, loads it back, and returns the loaded list
-func roundTrip(t *testing.T, tl1 *TodoList) *TodoList {
+func roundTrip(t *testing.T, tl1 *TodoList, file FileDescriptor) *TodoList {
 	t.Helper()
-	tmpDir := t.TempDir()
-	filePath := filepath.Join(tmpDir, "roundtrip.md")
-	file := NewFile(filePath)
 
-	err := tl1.Save(file)
+	err := tl1.Save()
 	assert.NoError(t, err, "Save failed during round-trip")
 
-	tl2 := NewTodoList()
-	err = tl2.Load(file)
+	tl2 := NewTodoList(file)
+	err = tl2.Load()
 	assert.NoError(t, err, "Load failed during round-trip")
 
 	return tl2
@@ -85,20 +82,6 @@ func assertEqualTodoLists(t *testing.T, tl1, tl2 *TodoList) {
 	assertValid(t, tl2)
 }
 
-// saveToString saves tl to a string (for format testing without file I/O)
-func saveToString(t *testing.T, tl *TodoList) string {
-	t.Helper()
-	tmpDir := t.TempDir()
-	filePath := filepath.Join(tmpDir, "temp.md")
-
-	err := tl.Save(NewFile(filePath))
-	assert.NoError(t, err)
-
-	content, err := os.ReadFile(filePath)
-	assert.NoError(t, err)
-	return string(content)
-}
-
 // serializeToString directly serializes a TodoList to string (no file I/O)
 func serializeToString(t *testing.T, tl *TodoList) string {
 	t.Helper()
@@ -108,7 +91,11 @@ func serializeToString(t *testing.T, tl *TodoList) string {
 // deserializeFromString directly deserializes markdown content to TodoList (no file I/O)
 func deserializeFromString(t *testing.T, content string) *TodoList {
 	t.Helper()
-	tl, err := deserialize(content)
+	file := NewFakeFile()
+	_ = file.Save(content)
+
+	tl := NewTodoList(file)
+	err := tl.Load()
 	assert.NoError(t, err)
 	return tl
 }
@@ -116,8 +103,11 @@ func deserializeFromString(t *testing.T, content string) *TodoList {
 // deserializeFromStringWithError directly deserializes and expects an error
 func deserializeFromStringWithError(t *testing.T, content string) error {
 	t.Helper()
-	_, err := deserialize(content)
-	return err
+	file := NewFakeFile()
+	_ = file.Save(content)
+
+	tl := NewTodoList(file)
+	return tl.Load()
 }
 
 // ============================================================================
@@ -128,7 +118,8 @@ func TestSaveLoadRoundTrip(t *testing.T) {
 	t.Run("simple todo with all fields", func(t *testing.T) {
 		startTime := time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
 		clock := NewTestClock(startTime)
-		tl1 := NewTodoList(withClock(clock))
+		file := NewFakeFile()
+		tl1 := NewTodoList(file, withClock(clock))
 
 		todo, _ := tl1.Add("Complete Task", "", -1)
 		due := startTime.Add(24 * time.Hour)
@@ -140,14 +131,15 @@ func TestSaveLoadRoundTrip(t *testing.T) {
 		})
 		tl1.Complete(todo.ID)
 
-		tl2 := roundTrip(t, tl1)
+		tl2 := roundTrip(t, tl1, file)
 		assertEqualTodoLists(t, tl1, tl2)
 	})
 
 	t.Run("deep hierarchy with mixed field combinations", func(t *testing.T) {
 		startTime := time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
 		clock := NewTestClock(startTime)
-		tl1 := NewTodoList(withClock(clock))
+		file := NewFakeFile()
+		tl1 := NewTodoList(file, withClock(clock))
 
 		// Build a complex tree
 		root1, _ := tl1.Add("Root 1", "", -1)
@@ -170,14 +162,15 @@ func TestSaveLoadRoundTrip(t *testing.T) {
 		tl1.Complete(grand2.ID)
 		tl1.Update(root2.ID, TodoUpdate{Description: strPtr("Root 2 description")})
 
-		tl2 := roundTrip(t, tl1)
+		tl2 := roundTrip(t, tl1, file)
 		assertEqualTodoLists(t, tl1, tl2)
 	})
 
 	t.Run("order preservation with specific positions", func(t *testing.T) {
 		startTime := time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
 		clock := NewTestClock(startTime)
-		tl1 := NewTodoList(withClock(clock))
+		file := NewFakeFile()
+		tl1 := NewTodoList(file, withClock(clock))
 
 		parent, _ := tl1.Add("Parent", "", -1)
 
@@ -186,7 +179,7 @@ func TestSaveLoadRoundTrip(t *testing.T) {
 		third, _ := tl1.Add("Third", parent.ID, -1)
 		second, _ := tl1.Add("Second", parent.ID, 1)
 
-		tl2 := roundTrip(t, tl1)
+		tl2 := roundTrip(t, tl1, file)
 
 		// Verify order is preserved
 		assert.Equal(t, first.ID, parent.Children[0].ID)
@@ -200,7 +193,8 @@ func TestSaveLoadRoundTrip(t *testing.T) {
 	t.Run("edge cases: empty strings, zero values, special characters", func(t *testing.T) {
 		startTime := time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
 		clock := NewTestClock(startTime)
-		tl1 := NewTodoList(withClock(clock))
+		file := NewFakeFile()
+		tl1 := NewTodoList(file, withClock(clock))
 
 		// Various edge cases
 		t1, _ := tl1.Add("Minimal", "", -1) // no optional fields
@@ -220,7 +214,7 @@ func TestSaveLoadRoundTrip(t *testing.T) {
 			Description: strPtr("Line 1\nLine 2 with *stars*\nLine 3 with `code`"),
 		})
 
-		tl2 := roundTrip(t, tl1)
+		tl2 := roundTrip(t, tl1, file)
 		assertEqualTodoLists(t, tl1, tl2)
 	})
 
@@ -232,13 +226,13 @@ func TestSaveLoadRoundTrip(t *testing.T) {
 
 func TestSaveFormat(t *testing.T) {
 	t.Run("empty list produces empty output", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 		content := serializeToString(t, tl)
 		assert.Empty(t, strings.TrimSpace(content))
 	})
 
 	t.Run("omits priority when zero", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 		tl.Add("Task", "", -1) // default priority = 0
 
 		content := serializeToString(t, tl)
@@ -246,7 +240,7 @@ func TestSaveFormat(t *testing.T) {
 	})
 
 	t.Run("includes priority when non-zero", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 		todo, _ := tl.Add("Task", "", -1)
 		tl.Update(todo.ID, TodoUpdate{Priority: intPtr(5)})
 
@@ -255,7 +249,7 @@ func TestSaveFormat(t *testing.T) {
 	})
 
 	t.Run("omits due when nil", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 		todo, _ := tl.Add("Task", "", -1)
 		tl.Update(todo.ID, TodoUpdate{Priority: intPtr(1)}) // no DueDate
 
@@ -266,7 +260,7 @@ func TestSaveFormat(t *testing.T) {
 	t.Run("includes due when set", func(t *testing.T) {
 		startTime := time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
 		clock := NewTestClock(startTime)
-		tl := NewTodoList(withClock(clock))
+		tl := NewTodoList(NewFakeFile(), withClock(clock))
 
 		todo, _ := tl.Add("Task", "", -1)
 		due := startTime.Add(24 * time.Hour)
@@ -277,7 +271,7 @@ func TestSaveFormat(t *testing.T) {
 	})
 
 	t.Run("omits completed date when not completed", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 		tl.Add("Task", "", -1)
 
 		content := serializeToString(t, tl)
@@ -287,7 +281,7 @@ func TestSaveFormat(t *testing.T) {
 	t.Run("includes completed date when completed", func(t *testing.T) {
 		startTime := time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
 		clock := NewTestClock(startTime)
-		tl := NewTodoList(withClock(clock))
+		tl := NewTodoList(NewFakeFile(), withClock(clock))
 
 		todo, _ := tl.Add("Task", "", -1)
 		tl.Complete(todo.ID)
@@ -297,7 +291,7 @@ func TestSaveFormat(t *testing.T) {
 	})
 
 	t.Run("formats tags as comma-separated", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 		todo, _ := tl.Add("Task", "", -1)
 		tl.Update(todo.ID, TodoUpdate{Tags: []string{"tag1", "tag2", "tag3"}})
 
@@ -306,7 +300,7 @@ func TestSaveFormat(t *testing.T) {
 	})
 
 	t.Run("handles multi-line descriptions with 2-space indent", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 		todo, _ := tl.Add("Task", "", -1)
 		tl.Update(todo.ID, TodoUpdate{Description: strPtr("Line 1\nLine 2\nLine 3")})
 
@@ -319,7 +313,7 @@ func TestSaveFormat(t *testing.T) {
 	})
 
 	t.Run("indents children by 2 spaces per level", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 		parent, _ := tl.Add("Parent", "", -1)
 		child, _ := tl.Add("Child", parent.ID, -1)
 		_, _ = tl.Add("Grandchild", child.ID, -1)
@@ -336,7 +330,7 @@ func TestSaveFormat(t *testing.T) {
 	})
 
 	t.Run("preserves order of multiple roots", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 		tl.Add("First", "", -1)
 		tl.Add("Second", "", -1)
 		tl.Add("Third", "", -1)
@@ -519,8 +513,9 @@ func TestLoadNonExistentFile(t *testing.T) {
 	tmpDir := t.TempDir()
 	nonExistent := filepath.Join(tmpDir, "does-not-exist.md")
 
-	tl := NewTodoList()
-	err := tl.Load(NewFile(nonExistent))
+	file := NewFile(nonExistent)
+	tl := NewTodoList(file)
+	err := tl.Load()
 	assert.NoError(t, err)
 	assert.NotNil(t, tl)
 	assertValid(t, tl)
@@ -533,10 +528,11 @@ func TestSaveToNonExistentDirectory(t *testing.T) {
 	subDir := filepath.Join(tmpDir, "newdir")
 	filePath := filepath.Join(subDir, "test.md")
 
-	tl := NewTodoList()
+	file := NewFile(filePath)
+	tl := NewTodoList(file)
 	tl.Add("Task", "", -1)
 
-	err := tl.Save(NewFile(filePath))
+	err := tl.Save()
 	assert.NoError(t, err)
 
 	_, err = os.Stat(filePath)

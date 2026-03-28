@@ -51,7 +51,7 @@ func AddCmdFunc() func(cmd *cobra.Command, args []string) error {
 
 		// Load todo list from file
 		// TODO: Add error handling for file load errors (e.g., permission issues, corruption)
-		tl, file, _ := loadTodoList(todoPath)
+		tl, _, _ := loadTodoList(todoPath)
 
 		// Extract title from args
 		title := args[0]
@@ -78,8 +78,7 @@ func AddCmdFunc() func(cmd *cobra.Command, args []string) error {
 			_, _ = tl.Update(todoItem.ID, todo.TodoUpdate{Priority: &finalPriority})
 		}
 
-		// Save to file
-		if err := tl.Save(file); err != nil {
+		if err := tl.Save(); err != nil {
 			return err
 		}
 

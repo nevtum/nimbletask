@@ -41,7 +41,7 @@ func CompleteCmdFunc() func(cmd *cobra.Command, args []string) error {
 
 		// Load todo list from file
 		// TODO: Add error handling for file load errors (e.g., permission issues, corruption)
-		tl, file, _ := loadTodoList(todoPath)
+		tl, _, _ := loadTodoList(todoPath)
 
 		// Extract todo ID from args
 		todoID := args[0]
@@ -51,7 +51,6 @@ func CompleteCmdFunc() func(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		// Save to file
-		return tl.Save(file)
+		return tl.Save()
 	}
 }

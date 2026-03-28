@@ -45,10 +45,10 @@ func NewRootCmd() *cobra.Command {
 // loadTodoList creates a new TodoList and loads it from the given file path.
 // Returns a friendly error message if loading fails (e.g., permission issues, corruption).
 func loadTodoList(path string) (*todo.TodoList, *todo.File, error) {
-	tl := todo.NewTodoList()
-
 	file := todo.NewFile(path)
-	if err := tl.Load(file); err != nil {
+	tl := todo.NewTodoList(file)
+
+	if err := tl.Load(); err != nil {
 		return nil, nil, fmt.Errorf("cannot load todos: %w", err)
 	}
 

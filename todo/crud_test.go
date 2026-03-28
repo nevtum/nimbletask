@@ -16,7 +16,7 @@ func assertValid(t *testing.T, tl *TodoList) {
 // TestNewTodoList verifies that a new TodoList is properly initialized
 func TestNewTodoList(t *testing.T) {
 	t.Run("initializes empty todo list", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 
 		assert.NotNil(t, tl, "NewTodoList() returned nil")
 		assert.NotNil(t, tl.todos, "todos map not initialized")
@@ -60,7 +60,7 @@ func TestTodoCreation(t *testing.T) {
 // TestAddTodo verifies adding todos to the list
 func TestAddTodo(t *testing.T) {
 	t.Run("adds root-level todo", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 
 		todo, err := tl.Add("Root Todo", "", -1)
 		assert.NoError(t, err, "Add failed")
@@ -72,7 +72,7 @@ func TestAddTodo(t *testing.T) {
 	})
 
 	t.Run("adds child todo with parent", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 
 		// Add parent first
 		parent, err := tl.Add("Parent", "", -1)
@@ -86,21 +86,21 @@ func TestAddTodo(t *testing.T) {
 	})
 
 	t.Run("returns error for non-existent parent", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 
 		_, err := tl.Add("Child", "non-existent-id", -1)
 		assert.Error(t, err, "Expected error when adding to non-existent parent")
 	})
 
 	t.Run("returns error for empty title", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 
 		_, err := tl.Add("", "", -1)
 		assert.Error(t, err, "Expected error when adding todo with empty title")
 	})
 
 	t.Run("adds at position 0", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 
 		// Add at position 0 (first)
 		todo1, _ := tl.Add("First", "", 0)
@@ -113,7 +113,7 @@ func TestAddTodo(t *testing.T) {
 	})
 
 	t.Run("adds at end with position -1", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 
 		todo1, _ := tl.Add("First", "", -1)
 		todo2, _ := tl.Add("Second", "", -1)
@@ -131,7 +131,7 @@ func TestAddTodo(t *testing.T) {
 // TestGetTodo verifies retrieving todos from the list
 func TestGetTodo(t *testing.T) {
 	t.Run("retrieves existing todo", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 		todo, _ := tl.Add("Test", "", -1)
 
 		retrieved, err := tl.Get(todo.ID)
@@ -141,7 +141,7 @@ func TestGetTodo(t *testing.T) {
 	})
 
 	t.Run("returns error for non-existent todo", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 
 		_, err := tl.Get("non-existent-id")
 		assert.Error(t, err, "Expected error when getting non-existent todo")
@@ -154,7 +154,7 @@ func TestUpdateTodo(t *testing.T) {
 		// Use a fixed time for deterministic testing
 		startTime := time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
 		clock := NewTestClock(startTime)
-		tl := NewTodoList(withClock(clock))
+		tl := NewTodoList(NewFakeFile(), withClock(clock))
 
 		todo, _ := tl.Add("Original", "", -1)
 		originalID := todo.ID
@@ -188,7 +188,7 @@ func TestUpdateTodo(t *testing.T) {
 	})
 
 	t.Run("returns error for non-existent todo", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 		newTitle := "New"
 		updates := TodoUpdate{Title: &newTitle}
 
@@ -200,7 +200,7 @@ func TestUpdateTodo(t *testing.T) {
 // TestDeleteTodo verifies deleting todos from the list
 func TestDeleteTodo(t *testing.T) {
 	t.Run("deletes root-level todo", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 		todo, _ := tl.Add("To Delete", "", -1)
 		id := todo.ID
 
@@ -212,7 +212,7 @@ func TestDeleteTodo(t *testing.T) {
 	})
 
 	t.Run("deletes child todo", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 		parent, _ := tl.Add("Parent", "", -1)
 		child, _ := tl.Add("Child", parent.ID, -1)
 
@@ -224,7 +224,7 @@ func TestDeleteTodo(t *testing.T) {
 	})
 
 	t.Run("returns error for non-existent todo", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 
 		err := tl.Delete("non-existent")
 		assert.Error(t, err, "Expected error when deleting non-existent todo")
@@ -234,7 +234,7 @@ func TestDeleteTodo(t *testing.T) {
 // TestGetRoots verifies retrieving all root todos
 func TestGetRoots(t *testing.T) {
 	t.Run("retrieves all root todos", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 
 		// Add multiple roots
 		tl.Add("Root 1", "", -1)
@@ -248,7 +248,7 @@ func TestGetRoots(t *testing.T) {
 
 // TestGetChildren verifies retrieving children of a todo
 func TestGetChildren(t *testing.T) {
-	tl := NewTodoList()
+	tl := NewTodoList(NewFakeFile())
 	parent, _ := tl.Add("Parent", "", -1)
 	tl.Add("Child 1", parent.ID, -1)
 	tl.Add("Child 2", parent.ID, -1)
@@ -269,7 +269,7 @@ func TestGetChildren(t *testing.T) {
 // TestComplete verifies completing a todo
 func TestComplete(t *testing.T) {
 	t.Run("completes a root todo", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 		todo, _ := tl.Add("Root Todo", "", -1)
 
 		err := tl.Complete(todo.ID)
@@ -279,7 +279,7 @@ func TestComplete(t *testing.T) {
 	})
 
 	t.Run("completes a child todo", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 		parent, _ := tl.Add("Parent", "", -1)
 		child, _ := tl.Add("Child", parent.ID, -1)
 
@@ -290,7 +290,7 @@ func TestComplete(t *testing.T) {
 	})
 
 	t.Run("returns error for non-existent todo", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 
 		err := tl.Complete("non-existent-id")
 		assert.Error(t, err, "Expected error when completing non-existent todo")
@@ -299,7 +299,7 @@ func TestComplete(t *testing.T) {
 	t.Run("updates UpdatedAt timestamp", func(t *testing.T) {
 		startTime := time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
 		clock := NewTestClock(startTime)
-		tl := NewTodoList(withClock(clock))
+		tl := NewTodoList(NewFakeFile(), withClock(clock))
 
 		todo, _ := tl.Add("Test Todo", "", -1)
 		originalUpdatedAt := todo.UpdatedAt
@@ -315,7 +315,7 @@ func TestComplete(t *testing.T) {
 	})
 
 	t.Run("idempotent - completing already completed todo", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 		todo, _ := tl.Add("Test Todo", "", -1)
 
 		// Complete once

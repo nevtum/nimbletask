@@ -10,7 +10,8 @@ import (
 // TestMove verifies moving todos between parents
 func TestMove(t *testing.T) {
 	t.Run("moves child to new parent", func(t *testing.T) {
-		tl := NewTodoList(withClock(NewTestClock(time.Now())))
+		file := NewFakeFile()
+		tl := NewTodoList(file, withClock(NewTestClock(time.Now())))
 		parent1, _ := tl.Add("Parent 1", "", -1)
 		parent2, _ := tl.Add("Parent 2", "", -1)
 		child, _ := tl.Add("Child", parent1.ID, -1)
@@ -25,7 +26,7 @@ func TestMove(t *testing.T) {
 	})
 
 	t.Run("moves to root level", func(t *testing.T) {
-		tl := NewTodoList(withClock(NewTestClock(time.Now())))
+		tl := NewTodoList(NewFakeFile(), withClock(NewTestClock(time.Now())))
 		parent, _ := tl.Add("Parent", "", -1)
 		child, _ := tl.Add("Child", parent.ID, -1)
 
@@ -38,7 +39,7 @@ func TestMove(t *testing.T) {
 	})
 
 	t.Run("moves root to child", func(t *testing.T) {
-		tl := NewTodoList(withClock(NewTestClock(time.Now())))
+		tl := NewTodoList(NewFakeFile(), withClock(NewTestClock(time.Now())))
 		root, _ := tl.Add("Root", "", -1)
 		parent, _ := tl.Add("Parent", "", -1)
 
@@ -51,7 +52,7 @@ func TestMove(t *testing.T) {
 	})
 
 	t.Run("moves with specific position", func(t *testing.T) {
-		tl := NewTodoList(withClock(NewTestClock(time.Now())))
+		tl := NewTodoList(NewFakeFile(), withClock(NewTestClock(time.Now())))
 		parent, _ := tl.Add("Parent", "", -1)
 		child1, _ := tl.Add("Child 1", parent.ID, -1)
 		child2, _ := tl.Add("Child 2", parent.ID, -1)
@@ -66,7 +67,7 @@ func TestMove(t *testing.T) {
 	})
 
 	t.Run("no-op when moving to same parent at same position", func(t *testing.T) {
-		tl := NewTodoList(withClock(NewTestClock(time.Now())))
+		tl := NewTodoList(NewFakeFile(), withClock(NewTestClock(time.Now())))
 		parent, _ := tl.Add("Parent", "", -1)
 		child, _ := tl.Add("Child", parent.ID, -1)
 
@@ -76,7 +77,7 @@ func TestMove(t *testing.T) {
 	})
 
 	t.Run("returns error for non-existent todo", func(t *testing.T) {
-		tl := NewTodoList(withClock(NewTestClock(time.Now())))
+		tl := NewTodoList(NewFakeFile(), withClock(NewTestClock(time.Now())))
 		parent, _ := tl.Add("Parent", "", -1)
 
 		err := tl.Move("non-existent", parent.ID, -1)
@@ -85,7 +86,7 @@ func TestMove(t *testing.T) {
 	})
 
 	t.Run("returns error for non-existent new parent", func(t *testing.T) {
-		tl := NewTodoList(withClock(NewTestClock(time.Now())))
+		tl := NewTodoList(NewFakeFile(), withClock(NewTestClock(time.Now())))
 		todo, _ := tl.Add("Todo", "", -1)
 
 		err := tl.Move(todo.ID, "non-existent", -1)
@@ -94,7 +95,7 @@ func TestMove(t *testing.T) {
 	})
 
 	t.Run("prevents direct circular reference", func(t *testing.T) {
-		tl := NewTodoList(withClock(NewTestClock(time.Now())))
+		tl := NewTodoList(NewFakeFile(), withClock(NewTestClock(time.Now())))
 		parent, _ := tl.Add("Parent", "", -1)
 		child, _ := tl.Add("Child", parent.ID, -1)
 
@@ -106,7 +107,7 @@ func TestMove(t *testing.T) {
 	})
 
 	t.Run("prevents indirect circular reference", func(t *testing.T) {
-		tl := NewTodoList(withClock(NewTestClock(time.Now())))
+		tl := NewTodoList(NewFakeFile(), withClock(NewTestClock(time.Now())))
 		grandparent, _ := tl.Add("Grandparent", "", -1)
 		parent, _ := tl.Add("Parent", grandparent.ID, -1)
 		child, _ := tl.Add("Child", parent.ID, -1)
@@ -119,7 +120,7 @@ func TestMove(t *testing.T) {
 	})
 
 	t.Run("prevents moving todo under itself", func(t *testing.T) {
-		tl := NewTodoList(withClock(NewTestClock(time.Now())))
+		tl := NewTodoList(NewFakeFile(), withClock(NewTestClock(time.Now())))
 		todo, _ := tl.Add("Todo", "", -1)
 
 		err := tl.Move(todo.ID, todo.ID, -1)
@@ -132,7 +133,7 @@ func TestMove(t *testing.T) {
 // TestPromote verifies promoting todos up the hierarchy
 func TestPromote(t *testing.T) {
 	t.Run("promotes child to root", func(t *testing.T) {
-		tl := NewTodoList(withClock(NewTestClock(time.Now())))
+		tl := NewTodoList(NewFakeFile(), withClock(NewTestClock(time.Now())))
 		parent, _ := tl.Add("Parent", "", -1)
 		child, _ := tl.Add("Child", parent.ID, -1)
 
@@ -145,7 +146,7 @@ func TestPromote(t *testing.T) {
 	})
 
 	t.Run("promotes grandchild to sibling of parent", func(t *testing.T) {
-		tl := NewTodoList(withClock(NewTestClock(time.Now())))
+		tl := NewTodoList(NewFakeFile(), withClock(NewTestClock(time.Now())))
 		grandparent, _ := tl.Add("Grandparent", "", -1)
 		parent, _ := tl.Add("Parent", grandparent.ID, -1)
 		grandchild, _ := tl.Add("Grandchild", parent.ID, -1)
@@ -159,7 +160,7 @@ func TestPromote(t *testing.T) {
 	})
 
 	t.Run("no-op for root todo", func(t *testing.T) {
-		tl := NewTodoList(withClock(NewTestClock(time.Now())))
+		tl := NewTodoList(NewFakeFile(), withClock(NewTestClock(time.Now())))
 		root, _ := tl.Add("Root", "", -1)
 
 		err := tl.Promote(root.ID)
@@ -170,7 +171,7 @@ func TestPromote(t *testing.T) {
 	})
 
 	t.Run("returns error for non-existent todo", func(t *testing.T) {
-		tl := NewTodoList(withClock(NewTestClock(time.Now())))
+		tl := NewTodoList(NewFakeFile(), withClock(NewTestClock(time.Now())))
 
 		err := tl.Promote("non-existent")
 
@@ -181,7 +182,7 @@ func TestPromote(t *testing.T) {
 // TestDemote verifies demoting todos under siblings
 func TestDemote(t *testing.T) {
 	t.Run("demotes root under sibling at end", func(t *testing.T) {
-		tl := NewTodoList(withClock(NewTestClock(time.Now())))
+		tl := NewTodoList(NewFakeFile(), withClock(NewTestClock(time.Now())))
 		sibling, _ := tl.Add("Sibling", "", -1)
 		todo, _ := tl.Add("Todo", "", -1)
 
@@ -195,7 +196,7 @@ func TestDemote(t *testing.T) {
 	})
 
 	t.Run("demotes root under sibling at beginning", func(t *testing.T) {
-		tl := NewTodoList(withClock(NewTestClock(time.Now())))
+		tl := NewTodoList(NewFakeFile(), withClock(NewTestClock(time.Now())))
 		sibling, _ := tl.Add("Sibling", "", -1)
 		_, _ = tl.Add("Sibling2", "", -1) // Ensure multiple siblings exist
 		todo, _ := tl.Add("Todo", "", -1)
@@ -209,7 +210,7 @@ func TestDemote(t *testing.T) {
 	})
 
 	t.Run("demotes child under sibling", func(t *testing.T) {
-		tl := NewTodoList(withClock(NewTestClock(time.Now())))
+		tl := NewTodoList(NewFakeFile(), withClock(NewTestClock(time.Now())))
 		parent, _ := tl.Add("Parent", "", -1)
 		sibling, _ := tl.Add("Sibling", parent.ID, -1)
 		todo, _ := tl.Add("Todo", parent.ID, -1)
@@ -223,7 +224,7 @@ func TestDemote(t *testing.T) {
 	})
 
 	t.Run("returns error for non-existent todo", func(t *testing.T) {
-		tl := NewTodoList(withClock(NewTestClock(time.Now())))
+		tl := NewTodoList(NewFakeFile(), withClock(NewTestClock(time.Now())))
 		sibling, _ := tl.Add("Sibling", "", -1)
 
 		err := tl.Demote("non-existent", sibling.ID)
@@ -232,7 +233,7 @@ func TestDemote(t *testing.T) {
 	})
 
 	t.Run("returns error for non-existent sibling", func(t *testing.T) {
-		tl := NewTodoList(withClock(NewTestClock(time.Now())))
+		tl := NewTodoList(NewFakeFile(), withClock(NewTestClock(time.Now())))
 		todo, _ := tl.Add("Todo", "", -1)
 
 		err := tl.Demote(todo.ID, "non-existent")
@@ -241,7 +242,7 @@ func TestDemote(t *testing.T) {
 	})
 
 	t.Run("returns error for non-existent sibling", func(t *testing.T) {
-		tl := NewTodoList(withClock(NewTestClock(time.Now())))
+		tl := NewTodoList(NewFakeFile(), withClock(NewTestClock(time.Now())))
 		todo, _ := tl.Add("Todo", "", -1)
 
 		err := tl.Demote(todo.ID, "any-id")
@@ -250,7 +251,7 @@ func TestDemote(t *testing.T) {
 	})
 
 	t.Run("returns error when sibling is not actually a sibling", func(t *testing.T) {
-		tl := NewTodoList(withClock(NewTestClock(time.Now())))
+		tl := NewTodoList(NewFakeFile(), withClock(NewTestClock(time.Now())))
 		parent, _ := tl.Add("Parent", "", -1)
 		child, _ := tl.Add("Child", parent.ID, -1)
 		unrelated, _ := tl.Add("Unrelated", "", -1)
@@ -264,7 +265,7 @@ func TestDemote(t *testing.T) {
 // TestReorder verifies reordering todos within their parent
 func TestReorder(t *testing.T) {
 	t.Run("reorders within same parent", func(t *testing.T) {
-		tl := NewTodoList(withClock(NewTestClock(time.Now())))
+		tl := NewTodoList(NewFakeFile(), withClock(NewTestClock(time.Now())))
 		parent, _ := tl.Add("Parent", "", -1)
 		child1, _ := tl.Add("Child 1", parent.ID, -1)
 		child2, _ := tl.Add("Child 2", parent.ID, -1)
@@ -280,7 +281,7 @@ func TestReorder(t *testing.T) {
 	})
 
 	t.Run("reorders root todos", func(t *testing.T) {
-		tl := NewTodoList(withClock(NewTestClock(time.Now())))
+		tl := NewTodoList(NewFakeFile(), withClock(NewTestClock(time.Now())))
 		root1, _ := tl.Add("Root 1", "", -1)
 		root2, _ := tl.Add("Root 2", "", -1)
 		root3, _ := tl.Add("Root 3", "", -1)
@@ -294,7 +295,7 @@ func TestReorder(t *testing.T) {
 	})
 
 	t.Run("reorders to end", func(t *testing.T) {
-		tl := NewTodoList(withClock(NewTestClock(time.Now())))
+		tl := NewTodoList(NewFakeFile(), withClock(NewTestClock(time.Now())))
 		parent, _ := tl.Add("Parent", "", -1)
 		child1, _ := tl.Add("Child 1", parent.ID, -1)
 		child2, _ := tl.Add("Child 2", parent.ID, -1)
@@ -309,7 +310,7 @@ func TestReorder(t *testing.T) {
 	})
 
 	t.Run("returns error for non-existent todo", func(t *testing.T) {
-		tl := NewTodoList(withClock(NewTestClock(time.Now())))
+		tl := NewTodoList(NewFakeFile(), withClock(NewTestClock(time.Now())))
 
 		err := tl.Reorder("non-existent", 0)
 
@@ -317,7 +318,7 @@ func TestReorder(t *testing.T) {
 	})
 
 	t.Run("returns error for negative position", func(t *testing.T) {
-		tl := NewTodoList(withClock(NewTestClock(time.Now())))
+		tl := NewTodoList(NewFakeFile(), withClock(NewTestClock(time.Now())))
 		todo, _ := tl.Add("Todo", "", -1)
 
 		err := tl.Reorder(todo.ID, -1)
@@ -327,7 +328,7 @@ func TestReorder(t *testing.T) {
 	})
 
 	t.Run("returns error for position out of bounds", func(t *testing.T) {
-		tl := NewTodoList(withClock(NewTestClock(time.Now())))
+		tl := NewTodoList(NewFakeFile(), withClock(NewTestClock(time.Now())))
 		parent, _ := tl.Add("Parent", "", -1)
 		child, _ := tl.Add("Child", parent.ID, -1)
 		_ = parent // silence unused warning
@@ -339,7 +340,7 @@ func TestReorder(t *testing.T) {
 	})
 
 	t.Run("no-op when reordering to current position", func(t *testing.T) {
-		tl := NewTodoList(withClock(NewTestClock(time.Now())))
+		tl := NewTodoList(NewFakeFile(), withClock(NewTestClock(time.Now())))
 		parent, _ := tl.Add("Parent", "", -1)
 		child, _ := tl.Add("Child", parent.ID, -1)
 

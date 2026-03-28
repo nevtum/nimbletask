@@ -8,12 +8,15 @@ import (
 )
 
 // Save serializes the TodoList to a markdown file
-func (tl *TodoList) Save(file *File) error {
-	return file.Save(tl.serialize())
+func (tl *TodoList) Save() error {
+	if tl.file == nil {
+		return fmt.Errorf("no file associated with TodoList")
+	}
+	return tl.file.Save(tl.serialize())
 }
 
-func (tl *TodoList) Load(file *File) error {
-	content, err := file.Load()
+func (tl *TodoList) Load() error {
+	content, err := tl.file.Load()
 	if err != nil {
 		if err == err.(FileDoesNotExist) {
 			return nil
@@ -21,11 +24,10 @@ func (tl *TodoList) Load(file *File) error {
 			return err
 		}
 	}
-	newTodos, err := deserialize(content)
+	err = tl.deserialize(content)
 	if err != nil {
 		return err
 	}
-	*tl = *newTodos
 	return nil
 }
 
@@ -41,8 +43,7 @@ func (tl *TodoList) serialize() string {
 }
 
 // deserialize parses the markdown content and returns a TodoList
-func deserialize(content string) (*TodoList, error) {
-	tl := NewTodoList()
+func (tl *TodoList) deserialize(content string) error {
 	todos := make(map[string]*Todo)
 	var roots []*Todo
 
@@ -89,7 +90,7 @@ func deserialize(content string) (*TodoList, error) {
 		rest := line[dashIdx+1:]
 		rest = strings.TrimSpace(rest)
 		if len(rest) < 3 || (rest[:3] != "[ ]" && rest[:3] != "[x]") {
-			return nil, fmt.Errorf("%w: invalid checkbox format", ErrInvalidMetadata)
+			return fmt.Errorf("%w: invalid checkbox format", ErrInvalidMetadata)
 		}
 		completed := rest[:3] == "[x]"
 		rest = rest[3:]
@@ -98,7 +99,7 @@ func deserialize(content string) (*TodoList, error) {
 		commentStart := strings.Index(rest, "<!--")
 		commentEnd := strings.Index(rest, "-->")
 		if commentStart == -1 || commentEnd == -1 || commentStart > commentEnd {
-			return nil, fmt.Errorf("%w: malformed comment syntax", ErrInvalidMetadata)
+			return fmt.Errorf("%w: malformed comment syntax", ErrInvalidMetadata)
 		}
 
 		metadataStr := strings.TrimSpace(rest[commentStart+4 : commentEnd])
@@ -107,7 +108,7 @@ func deserialize(content string) (*TodoList, error) {
 		// Parse metadata
 		metaParts := strings.Split(metadataStr, "|")
 		if len(metaParts) < 3 {
-			return nil, fmt.Errorf("%w: malformed metadata format", ErrInvalidMetadata)
+			return fmt.Errorf("%w: malformed metadata format", ErrInvalidMetadata)
 		}
 
 		todo := &Todo{
@@ -121,11 +122,11 @@ func deserialize(content string) (*TodoList, error) {
 		hasCreated := false
 		for _, part := range metaParts {
 			if part == "" {
-				return nil, fmt.Errorf("%w: missing key-value separator", ErrInvalidMetadata)
+				return fmt.Errorf("%w: missing key-value separator", ErrInvalidMetadata)
 			}
 			kv := strings.SplitN(part, ":", 2)
 			if len(kv) != 2 {
-				return nil, fmt.Errorf("%w: malformed metadata format", ErrInvalidMetadata)
+				return fmt.Errorf("%w: malformed metadata format", ErrInvalidMetadata)
 			}
 			key := strings.TrimSpace(kv[0])
 			value := strings.TrimSpace(kv[1])
@@ -133,7 +134,7 @@ func deserialize(content string) (*TodoList, error) {
 			switch key {
 			case "id":
 				if value == "" {
-					return nil, ErrMissingID
+					return ErrMissingID
 				}
 				todo.ID = value
 			case "parent":
@@ -141,33 +142,33 @@ func deserialize(content string) (*TodoList, error) {
 			case "priority":
 				p, err := strconv.Atoi(value)
 				if err != nil {
-					return nil, fmt.Errorf("%w: invalid priority", ErrInvalidMetadata)
+					return fmt.Errorf("%w: invalid priority", ErrInvalidMetadata)
 				}
 				todo.Priority = p
 			case "created":
 				hasCreated = true
 				t, err := time.Parse(time.RFC3339, value)
 				if err != nil {
-					return nil, fmt.Errorf("%w: invalid created date", ErrInvalidDateFormat)
+					return fmt.Errorf("%w: invalid created date", ErrInvalidDateFormat)
 				}
 				todo.CreatedAt = t
 			case "completed":
 				t, err := time.Parse(time.RFC3339, value)
 				if err != nil {
-					return nil, fmt.Errorf("%w: invalid completed date", ErrInvalidDateFormat)
+					return fmt.Errorf("%w: invalid completed date", ErrInvalidDateFormat)
 				}
 				todo.Completed = completed
 				todo.UpdatedAt = t
 			case "due":
 				t, err := time.Parse(time.RFC3339, value)
 				if err != nil {
-					return nil, fmt.Errorf("%w: invalid due date", ErrInvalidDateFormat)
+					return fmt.Errorf("%w: invalid due date", ErrInvalidDateFormat)
 				}
 				todo.DueDate = &t
 			case "updated":
 				t, err := time.Parse(time.RFC3339, value)
 				if err != nil {
-					return nil, fmt.Errorf("%w: invalid updated date", ErrInvalidDateFormat)
+					return fmt.Errorf("%w: invalid updated date", ErrInvalidDateFormat)
 				}
 				todo.UpdatedAt = t
 			case "tags":
@@ -179,12 +180,12 @@ func deserialize(content string) (*TodoList, error) {
 
 		// Check that required 'created' field was present
 		if !hasCreated {
-			return nil, fmt.Errorf("%w: missing created", ErrMissingCreated)
+			return fmt.Errorf("%w: missing created", ErrMissingCreated)
 		}
 
 		// Validate required fields
 		if todo.ID == "" {
-			return nil, fmt.Errorf("%w: missing id", ErrMissingID)
+			return fmt.Errorf("%w: missing id", ErrMissingID)
 		}
 
 		// If not completed via metadata, set UpdatedAt to CreatedAt
@@ -197,7 +198,7 @@ func deserialize(content string) (*TodoList, error) {
 
 		// Check for duplicate ID
 		if _, exists := todos[todo.ID]; exists {
-			return nil, fmt.Errorf("%w: %s", ErrDuplicateID, todo.ID)
+			return fmt.Errorf("%w: %s", ErrDuplicateID, todo.ID)
 		}
 		todos[todo.ID] = todo
 
@@ -217,7 +218,7 @@ func deserialize(content string) (*TodoList, error) {
 			todo.ParentID = parent.ID
 			parent.Children = append(parent.Children, todo)
 		} else {
-			return nil, fmt.Errorf("%w: child without parent", ErrInvalidMetadata)
+			return fmt.Errorf("%w: child without parent", ErrInvalidMetadata)
 		}
 
 		// Push this todo onto stack
@@ -230,8 +231,8 @@ func deserialize(content string) (*TodoList, error) {
 
 	// Validate the loaded structure
 	if err := tl.Validate(); err != nil {
-		return nil, err
+		return err
 	}
 
-	return tl, nil
+	return nil
 }

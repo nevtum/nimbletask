@@ -9,7 +9,7 @@ import (
 // TestValidate verifies the Validate operation for list integrity
 func TestValidate(t *testing.T) {
 	t.Run("returns nil for valid empty list", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 
 		err := tl.Validate()
 
@@ -17,7 +17,7 @@ func TestValidate(t *testing.T) {
 	})
 
 	t.Run("returns nil for valid single root todo", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 		tl.Add("Root", "", -1)
 
 		err := tl.Validate()
@@ -26,7 +26,7 @@ func TestValidate(t *testing.T) {
 	})
 
 	t.Run("returns nil for valid hierarchical list", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 		parent, _ := tl.Add("Parent", "", -1)
 		tl.Add("Child", parent.ID, -1)
 
@@ -36,7 +36,7 @@ func TestValidate(t *testing.T) {
 	})
 
 	t.Run("returns nil for valid deeply nested list", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 		grandparent, _ := tl.Add("Grandparent", "", -1)
 		parent, _ := tl.Add("Parent", grandparent.ID, -1)
 		tl.Add("Child", parent.ID, -1)
@@ -47,7 +47,10 @@ func TestValidate(t *testing.T) {
 	})
 
 	t.Run("returns error when todo references non-existent parent", func(t *testing.T) {
-		tl := NewTodoList(withOrphanTodo("orphan-id", "Orphan", "non-existent-parent"))
+		tl := NewTodoList(
+			NewFakeFile(),
+			withOrphanTodo("orphan-id", "Orphan", "non-existent-parent"),
+		)
 
 		err := tl.Validate()
 
@@ -56,7 +59,10 @@ func TestValidate(t *testing.T) {
 	})
 
 	t.Run("returns error when root todo has ParentID but is in roots", func(t *testing.T) {
-		tl := NewTodoList(withRootWithParentID("invalid-root", "Invalid Root", "some-parent"))
+		tl := NewTodoList(
+			NewFakeFile(),
+			withRootWithParentID("invalid-root", "Invalid Root", "some-parent"),
+		)
 
 		err := tl.Validate()
 
@@ -65,7 +71,7 @@ func TestValidate(t *testing.T) {
 	})
 
 	t.Run("returns error when child not in parent's Children slice", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 		parent, _ := tl.Add("Parent", "", -1)
 
 		// Use helper to add child to map but not to parent's Children
@@ -79,7 +85,7 @@ func TestValidate(t *testing.T) {
 	})
 
 	t.Run("returns error when parent references child not in map", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 		parent, _ := tl.Add("Parent", "", -1)
 
 		// Use helper to add ghost child to parent's Children but not to map
@@ -93,7 +99,7 @@ func TestValidate(t *testing.T) {
 	})
 
 	t.Run("returns error when cycle exists in hierarchy", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 		// Create a 3-node chain: A -> B -> C
 		nodeA, _ := tl.Add("Node A", "", -1)
 		nodeB, _ := tl.Add("Node B", nodeA.ID, -1)
@@ -110,7 +116,7 @@ func TestValidate(t *testing.T) {
 	})
 
 	t.Run("returns error when todo has itself as parent", func(t *testing.T) {
-		tl := NewTodoList(withSelfParent("self-parent", "Self Parent"))
+		tl := NewTodoList(NewFakeFile(), withSelfParent("self-parent", "Self Parent"))
 
 		err := tl.Validate()
 
@@ -122,7 +128,7 @@ func TestValidate(t *testing.T) {
 // TestCanMove verifies the CanMove operation for validating moves without executing
 func TestCanMove(t *testing.T) {
 	t.Run("returns true for valid move to new parent", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 		parent, _ := tl.Add("Parent", "", -1)
 		child, _ := tl.Add("Child", "", -1)
 
@@ -133,7 +139,7 @@ func TestCanMove(t *testing.T) {
 	})
 
 	t.Run("returns true for valid move to root", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 		parent, _ := tl.Add("Parent", "", -1)
 		child, _ := tl.Add("Child", parent.ID, -1)
 
@@ -144,7 +150,7 @@ func TestCanMove(t *testing.T) {
 	})
 
 	t.Run("returns false when move would create direct cycle", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 		parent, _ := tl.Add("Parent", "", -1)
 		child, _ := tl.Add("Child", parent.ID, -1)
 
@@ -155,7 +161,7 @@ func TestCanMove(t *testing.T) {
 	})
 
 	t.Run("returns false when move would create indirect cycle", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 		grandparent, _ := tl.Add("Grandparent", "", -1)
 		parent, _ := tl.Add("Parent", grandparent.ID, -1)
 		child, _ := tl.Add("Child", parent.ID, -1)
@@ -167,7 +173,7 @@ func TestCanMove(t *testing.T) {
 	})
 
 	t.Run("returns false when todo does not exist", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 		parent, _ := tl.Add("Parent", "", -1)
 
 		canMove, err := tl.CanMove("non-existent", parent.ID)
@@ -177,7 +183,7 @@ func TestCanMove(t *testing.T) {
 	})
 
 	t.Run("returns false when new parent does not exist", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 		child, _ := tl.Add("Child", "", -1)
 
 		canMove, err := tl.CanMove(child.ID, "non-existent")
@@ -187,7 +193,7 @@ func TestCanMove(t *testing.T) {
 	})
 
 	t.Run("returns true when moving to same parent", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 		parent, _ := tl.Add("Parent", "", -1)
 		child, _ := tl.Add("Child", parent.ID, -1)
 
@@ -198,7 +204,7 @@ func TestCanMove(t *testing.T) {
 	})
 
 	t.Run("returns true when moving root to root (same parent)", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 		root, _ := tl.Add("Root", "", -1)
 
 		canMove, err := tl.CanMove(root.ID, "")
@@ -208,7 +214,7 @@ func TestCanMove(t *testing.T) {
 	})
 
 	t.Run("returns false when attempting to move under itself", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 		todo, _ := tl.Add("Todo", "", -1)
 
 		canMove, err := tl.CanMove(todo.ID, todo.ID)
@@ -218,7 +224,7 @@ func TestCanMove(t *testing.T) {
 	})
 
 	t.Run("returns true for complex valid move", func(t *testing.T) {
-		tl := NewTodoList()
+		tl := NewTodoList(NewFakeFile())
 		// Create two separate trees
 		tree1Root, _ := tl.Add("Tree1 Root", "", -1)
 		tree1Child, _ := tl.Add("Tree1 Child", tree1Root.ID, -1)

@@ -8,6 +8,11 @@ import (
 	"path/filepath"
 )
 
+type FileDescriptor interface {
+	Load() (string, error)
+	Save(string) error
+}
+
 type File struct {
 	path string
 }
@@ -73,4 +78,21 @@ func pathToWriter(path string) (io.Writer, error) {
 		return nil, fmt.Errorf("failed to create temp file: %w", err)
 	}
 	return f, nil
+}
+
+type FakeFile struct {
+	content string
+}
+
+func NewFakeFile() *FakeFile {
+	return &FakeFile{}
+}
+
+func (f *FakeFile) Load() (string, error) {
+	return f.content, nil
+}
+
+func (f *FakeFile) Save(content string) error {
+	f.content = content
+	return nil
 }
