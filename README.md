@@ -1,8 +1,10 @@
 # NimbleTask Todo CLI
 
-A powerful command-line todo management application built by AI, specifically designed for AI agents.
+A powerful command-line todo management application built by AI agents, for AI agents.
 
-The genesis of this project was to solve memory challenges faced by AI agents when coordinating long, complex tasks between multiple agent sessions. The design prioritizes:
+The genesis of this project was to solve memory challenges faced by AI agents when coordinating long, complex tasks between multiple agent sessions. Most current command line agent applications (ie Claude Code, OpenCode) support todo lists, but are limited to one session and cannot be shared between multiple sessions.
+
+The design prioritizes:
 
 - **Clean CLI interfaces** for terminal-based workflows
 - **Token friendly interface** keeping AI agent context windows low
@@ -22,7 +24,7 @@ The genesis of this project was to solve memory challenges faced by AI agents wh
 
 ## Installation
 
-This application requires Go installed on your machine and that $GOPATH value is in your PATH environment variable.
+This application requires Go to be installed on your machine and the $GOROOT/bin directory to be in your PATH environment variable.
 
 ```bash
 go install github.com/nevtum/nimbletask@latest
@@ -57,7 +59,7 @@ go install github.com/nevtum/nimbletask@latest
 All commands support these global flags:
 
 - `--config string`: Configuration directory root (default: `~/.config/nimbletask`)
-- `--file string`: Path to todo list file (default: `todo.md` in current directory)
+- `--file string`: Path to todo list file (default: `todos.md` in current directory)
 - `-h, --help`: Show help for the command
 
 ### `add` - Add a new todo item
@@ -78,12 +80,12 @@ todo add "Review pull requests"
 # High priority todo
 todo add "Fix critical bug" --priority 5
 
-# Subtask under parent
+# Subtasks under parent (use the ID from `todo list` output)
 todo add "Update documentation" --parent <id>
-
-# Nested subtask
 todo add "Add examples" --parent <id>
 ```
+
+> **Note:** Use `todo list` to see the IDs.
 
 ### `complete` - Mark a todo item as completed
 
@@ -93,10 +95,10 @@ todo complete [id]
 
 **Examples:**
 ```bash
-# Complete a specific todo
+# Complete a specific todo using its unique ID
 todo complete Kl_u9OqgV73aHsKmoYa57
 
-# Complete subtasks propagate to parent
+# Complete using hierarchical display number
 todo complete 1.1.2
 ```
 
@@ -106,7 +108,10 @@ todo complete 1.1.2
 todo list
 ```
 
-Shows todos in hierarchical format with completion status:
+Shows todos in hierarchical format with completion status. Each todo displays:
+- **Hierarchical number** (e.g., `1.1`): For easy reference and visualizing nesting level
+- **Unique ID** (e.g., `<id:abc123>`): For use with commands like `complete`
+
 ```
 1. [ ] <id:abc123> Main project
   1.1 [x] <id:def456> Completed subtask
@@ -159,12 +164,14 @@ todo completion [shell]
 
 **Examples:**
 ```bash
-# Generate zsh completion
+# Generate zsh completion (path may vary by system)
 todo completion zsh > ~/.zsh/completion/_todo
 
-# Generate bash completion
+# Generate bash completion (path may vary by system)
 todo completion bash > ~/.bash_completion.d/todo
 ```
+
+> **Note:** Completion file paths vary by shell and operating system. Refer to your shell's documentation for the correct completion directory.
 
 ## Configuration
 
@@ -175,7 +182,7 @@ The application creates a default configuration at `~/.config/nimbletask/config.
 ```json
 {
   "default_priority": 3,
-  "filename": "todos.md",
+  "filename": "todos.md"
 }
 ```
 
@@ -183,11 +190,12 @@ The application creates a default configuration at `~/.config/nimbletask/config.
 
 You can specify custom config locations:
 
+**Examples:**
 ```bash
-# Use custom config directory
-todo --config /path/to/config add "New todo"
+# Using a custom config directory
+todo --config /path/to/custom/config add "New todo"
 
-# Use custom todo file
+# Using a custom todo file
 todo --file my-tasks.md add "Another todo"
 ```
 
@@ -196,15 +204,16 @@ todo --file my-tasks.md add "Another todo"
 ### Project Management
 
 ```bash
-# Main project
+# Main project (run this first, then use the displayed ID for subtasks)
 todo add "Build Orders API"
+# Output: Created todo 1 [ ] <id:abc123> Build Orders API
 
-# Features
+# Features (replace <project-id> with the actual ID from above, e.g., abc123)
 todo add "User authentication" --parent <project-id>
 todo add "Data processing" --parent <project-id>
 todo add "API endpoints" --parent <project-id>
 
-# Sub-features
+# Sub-features (replace <auth-id> with the ID from the authentication todo)
 todo add "JWT implementation" --parent <auth-id>
 todo add "OAuth support" --parent <auth-id>
 ```
@@ -268,15 +277,3 @@ todo --file personal.md add "Plan vacation"
 # Open source todos
 todo --file oss.md add "Contribute to project"
 ```
-
-## Development Notes
-
-### Built by AI, for AI
-
-Majority of this tool was generated by AI to solve common memory challenges faced by AI agents. The design prioritizes:
-
-- **Clean CLI interfaces** for terminal-based workflows
-- **Token friendly interface** keeping AI agent context windows low
-- **Hierarchical organization** for complex projects
-- **Flexible configuration** for different use cases
-- **Robust error handling** for predictable behavior
