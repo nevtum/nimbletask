@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"bytes"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
@@ -16,19 +16,7 @@ func TestInitConfigCommand(t *testing.T) {
 	// Use isolated temp directory (safe - no env vars modified)
 	configDir := t.TempDir()
 
-	// Get a fresh command instance
-	cmd := NewRootCmd()
-
-	// Set arguments: init with custom config directory
-	cmd.SetArgs([]string{"--config", configDir, "init"})
-
-	// Capture output
-	var out bytes.Buffer
-	cmd.SetOut(&out)
-	cmd.SetErr(&out)
-
-	// Execute command
-	err := cmd.Execute()
+	_, err := runCmd(t, "--config", configDir, "init")
 
 	// Should succeed without error
 	require.NoError(t, err, "init should complete without error")
@@ -62,14 +50,8 @@ func TestInitConfig_CreatesParentDirectories(t *testing.T) {
 	_, err := os.Stat(configDir)
 	require.True(t, os.IsNotExist(err), "config dir should not exist initially")
 
-	// Execute init
-	cmd := NewRootCmd()
-	cmd.SetArgs([]string{"--config", configDir, "init"})
-	var out bytes.Buffer
-	cmd.SetOut(&out)
-	cmd.SetErr(&out)
+	_, err = runCmd(t, "--config", configDir, "init")
 
-	err = cmd.Execute()
 	require.NoError(t, err, "init should create parent directories and succeed")
 
 	// Verify config directory was created
@@ -89,30 +71,37 @@ func TestInitConfig_CreatesParentDirectories(t *testing.T) {
 	assert.Contains(t, string(configData), `"todos.md"`, "config should contain default filename value")
 }
 
-// TestInitConfig_Idempotent tests that init can be run multiple times
+// TestInitConfig_Idempotent tests that init does NOT overwrite existing config
 func TestInitConfig_Idempotent(t *testing.T) {
-	tmpDir := t.TempDir()
+	configDir := t.TempDir()
 
-	// First execution
-	cmd1 := NewRootCmd()
-	cmd1.SetArgs([]string{"--config", tmpDir, "init"})
-	err := cmd1.Execute()
-	require.NoError(t, err, "first init should succeed")
+	// Create the config directory
+	err := os.MkdirAll(configDir, 0755)
+	require.NoError(t, err, "should create config directory")
 
-	// Second execution - should not fail
-	cmd2 := NewRootCmd()
-	cmd2.SetArgs([]string{"--config", tmpDir, "init"})
-	err = cmd2.Execute()
-	require.NoError(t, err, "second init should also succeed (idempotent)")
+	// Create a custom config file with non-default values
+	customConfig, err := json.Marshal(Config{
+		Filename: "custom.md",
+	})
+	require.NoError(t, err, "should marshal config")
 
-	// Verify config still exists
-	configPath := filepath.Join(tmpDir, "config.json")
-	_, err = os.Stat(configPath)
-	assert.NoError(t, err, "config.json should still exist")
+	configPath := filepath.Join(configDir, "config.json")
+	err = os.WriteFile(configPath, []byte(customConfig), 0644)
+	require.NoError(t, err, "should create custom config file")
 
-	// Verify config file content
+	// Run init - should NOT overwrite existing config
+	out, err := runCmd(t, "--config", configDir, "init")
+
+	// Command should succeed without error
+	require.NoError(t, err, "init should complete without error")
+	require.Contains(t, out.String(), "Config file already exists")
+
+	// Verify config file content - should still have custom values
 	configData, err := os.ReadFile(configPath)
 	require.NoError(t, err, "should be able to read config file")
-	assert.Contains(t, string(configData), `"filename"`, "config should contain filename field")
-	assert.Contains(t, string(configData), `"todos.md"`, "config should contain default filename value")
+
+	// These assertions will FAIL with current implementation because it overwrites the file
+	// The config should NOT be overwritten - custom values should be preserved
+	configContent := string(configData)
+	assert.Contains(t, configContent, `"custom.md"`, "init should NOT overwrite existing config")
 }

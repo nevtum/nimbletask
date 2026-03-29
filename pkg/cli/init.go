@@ -25,8 +25,15 @@ func InitCmdFunc() func(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		bytes, _ := json.Marshal(defaultConfig())
 		configPath := filepath.Join(configRoot, "config.json")
+
+		// Check if config file already exists - don't overwrite
+		if _, err := os.Stat(configPath); err == nil {
+			fmt.Fprintf(cmd.OutOrStdout(), "Config file already exists at %s\n", configPath)
+			return nil
+		}
+
+		bytes, _ := json.Marshal(defaultConfig())
 		err := os.WriteFile(configPath, bytes, 0644)
 		if err != nil {
 			return err
