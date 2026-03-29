@@ -24,10 +24,10 @@ The design prioritizes:
 
 ## Installation
 
-This application requires Go to be installed on your machine and the $GOROOT/bin directory to be in your PATH environment variable.
+This application requires Go to be installed on your machine and the $GOPATH/bin directory to be in your PATH environment variable.
 
 ```bash
-go install github.com/nevtum/nimbletask@latest
+go install github.com/nevtum/nimbletask/todo@latest
 ```
 
 ## Quick Start
