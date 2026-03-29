@@ -50,9 +50,10 @@ type Todo struct {
 }
 
 type TodoList struct {
-    todos    map[string]*Todo
-    roots    []*Todo
-    modified bool
+    todos map[string]*Todo
+    roots []*Todo
+    clock Clock
+	file  AbstractFile
 }
 ```
 
@@ -180,5 +181,4 @@ $ todo list
 - Support `--format json` for all output commands
 - Validate cycles on every move operation
 - Maintain order in Children slice
-- Update `modified` flag on mutations
 - Support relative dates ("today", "tomorrow", "+7d")
