@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/nevtum/nimbletask/todo/cli"
+	"github.com/nevtum/nimbletask/pkg/cli"
 )
 
 // main executes the root command

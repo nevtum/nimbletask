@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/nevtum/nimbletask/todo"
+	"github.com/nevtum/nimbletask/pkg/todo"
 	"github.com/spf13/cobra"
 )
 
