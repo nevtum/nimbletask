@@ -7,10 +7,10 @@ The genesis of this project was to solve memory challenges faced by AI agents wh
 The design prioritizes:
 
 - **Clean CLI interfaces** for terminal-based workflows
-- **Token friendly interface** keeping AI agent context windows low
+- **Token friendly outputs** avoiding agent context windows from growing too fast
 - **Hierarchical organization** for complex projects
 - **Flexible configuration** for different use cases
-- **Robust error handling** for predictable behavior
+- **Robust error handling** for predictable AI friendly behavior
 
 ## Features
 
