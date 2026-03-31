@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -128,4 +129,97 @@ func TestMoveCommand_NonExistentParentID(t *testing.T) {
 	// Should error due to non-existent parent
 	assert.Error(t, err, "move should return error for non-existent parent ID")
 	assert.Contains(t, err.Error(), "not found", "error should indicate parent not found")
+}
+
+// TestMoveCommand_CircularReference tests that moving a parent under its own child is prevented
+// This test verifies spec requirement 5.3.1.4 - Move command error: circular reference
+func TestMoveCommand_CircularReference(t *testing.T) {
+	tmpDir := t.TempDir()
+	todoPath := filepath.Join(tmpDir, "todos.md")
+
+	// Setup config file first
+	setupTestConfig(t, tmpDir)
+
+	// Create parent task
+	parentOutput, err := runCmd(t, "--config", tmpDir, "--file", todoPath, "add", "Parent Task")
+	require.NoError(t, err, "should create parent task")
+	parentID := extractID(parentOutput.String())
+	require.NotEmpty(t, parentID, "should extract parent ID from output")
+
+	// Create child task under parent
+	childOutput, err := runCmd(t, "--config", tmpDir, "--file", todoPath, "add", "--parent", parentID, "Child Task")
+	require.NoError(t, err, "should create child task under parent")
+	childID := extractID(childOutput.String())
+	require.NotEmpty(t, childID, "should extract child ID from output")
+
+	// Verify initial structure
+	content, err := os.ReadFile(todoPath)
+	require.NoError(t, err, "should read todo file")
+	initialContent := string(content)
+	require.Contains(t, initialContent, "Parent Task", "file should contain parent")
+	require.Contains(t, initialContent, "Child Task", "file should contain child")
+	require.Contains(t, initialContent, "parent:"+parentID, "child should reference parent")
+
+	// Attempt to move parent under its own child - this should create a circular reference
+	_, err = runCmd(t, "--config", tmpDir, "--file", todoPath, "move", parentID, "--parent", childID)
+
+	// Should error due to circular reference
+	assert.Error(t, err, "move should return error for circular reference")
+	assert.Contains(t, err.Error(), "cycle", "error should indicate cycle detection")
+
+	// Verify the file was NOT modified (parent should still be a root)
+	content, err = os.ReadFile(todoPath)
+	require.NoError(t, err, "should read todo file after failed move")
+	finalContent := string(content)
+	require.Contains(t, finalContent, "parent:|", "parent should remain a root task")
+	require.NotContains(t, finalContent, "parent:"+childID, "parent should not reference child as parent")
+}
+
+// TestMoveCommand_ToRoot tests that moving a child todo to root level works
+// This test verifies spec requirement 5.3.1.2 - Move task to root level
+func TestMoveCommand_ToRoot(t *testing.T) {
+	tmpDir := t.TempDir()
+	todoPath := filepath.Join(tmpDir, "todos.md")
+
+	// Setup config file first
+	setupTestConfig(t, tmpDir)
+
+	// Create parent task
+	parentOutput, err := runCmd(t, "--config", tmpDir, "--file", todoPath, "add", "Parent Task")
+	require.NoError(t, err, "should create parent task")
+	parentID := extractID(parentOutput.String())
+	require.NotEmpty(t, parentID, "should extract parent ID from output")
+
+	// Create child task under parent
+	childOutput, err := runCmd(t, "--config", tmpDir, "--file", todoPath, "add", "--parent", parentID, "Child Task")
+	require.NoError(t, err, "should create child task under parent")
+	childID := extractID(childOutput.String())
+	require.NotEmpty(t, childID, "should extract child ID from output")
+
+	// Verify initial structure - child should have parent reference
+	content, err := os.ReadFile(todoPath)
+	require.NoError(t, err, "should read todo file")
+	initialContent := string(content)
+	require.Contains(t, initialContent, "parent:"+parentID, "child should reference parent")
+
+	// Move child to root level by not specifying --parent flag
+	_, err = runCmd(t, "--config", tmpDir, "--file", todoPath, "move", childID)
+	require.NoError(t, err, "move to root should succeed")
+
+	// Verify child is now at root level (no parent reference)
+	content, err = os.ReadFile(todoPath)
+	require.NoError(t, err, "should read updated todo file")
+	finalContent := string(content)
+
+	// Child should now be at root level - check the line with childID has parent:|
+	lines := strings.Split(finalContent, "\n")
+	var childLine string
+	for _, line := range lines {
+		if strings.Contains(line, childID) {
+			childLine = line
+			break
+		}
+	}
+	require.NotEmpty(t, childLine, "should find child in file")
+	require.Contains(t, childLine, "parent:|", "child should be at root level")
 }

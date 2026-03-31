@@ -357,3 +357,64 @@ func TestComplete(t *testing.T) {
 		assertValid(t, tl)
 	})
 }
+
+func TestCompleteSubtree(t *testing.T) {
+	t.Run("completes parent and all descendants", func(t *testing.T) {
+		tl := newTestTodoList()
+		parent, _ := tl.Add("Parent", "", -1)
+		child1, _ := tl.Add("Child 1", parent.ID, -1)
+		child2, _ := tl.Add("Child 2", parent.ID, -1)
+		grandchild, _ := tl.Add("Grandchild", child1.ID, -1)
+
+		err := tl.CompleteSubtree(parent.ID)
+		assert.NoError(t, err, "CompleteSubtree should succeed")
+
+		// All todos should be completed
+		assert.True(t, parent.Completed, "Parent should be completed")
+		assert.True(t, child1.Completed, "Child 1 should be completed")
+		assert.True(t, child2.Completed, "Child 2 should be completed")
+		assert.True(t, grandchild.Completed, "Grandchild should be completed")
+		assertValid(t, tl)
+	})
+
+	t.Run("returns error for non-existent todo", func(t *testing.T) {
+		tl := newTestTodoList()
+
+		err := tl.CompleteSubtree("non-existent-id")
+		assert.Error(t, err, "Expected error when completing non-existent todo subtree")
+	})
+
+	t.Run("completes single todo with no children", func(t *testing.T) {
+		tl := newTestTodoList()
+		todo, _ := tl.Add("Single Todo", "", -1)
+
+		err := tl.CompleteSubtree(todo.ID)
+		assert.NoError(t, err, "CompleteSubtree should succeed for single todo")
+		assert.True(t, todo.Completed, "Todo should be completed")
+		assertValid(t, tl)
+	})
+
+	t.Run("updates UpdatedAt for all completed todos", func(t *testing.T) {
+		startTime := time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
+		clock := NewTestClock(startTime)
+		tl := newTestTodoList(withClock(clock))
+
+		parent, _ := tl.Add("Parent", "", -1)
+		child, _ := tl.Add("Child", parent.ID, -1)
+
+		originalParentUpdatedAt := parent.UpdatedAt
+		originalChildUpdatedAt := child.UpdatedAt
+
+		// Advance clock
+		clock.Advance(1 * time.Hour)
+
+		err := tl.CompleteSubtree(parent.ID)
+		assert.NoError(t, err, "CompleteSubtree should succeed")
+
+		assert.True(t, parent.UpdatedAt.After(originalParentUpdatedAt), "Parent UpdatedAt should be updated")
+		assert.True(t, child.UpdatedAt.After(originalChildUpdatedAt), "Child UpdatedAt should be updated")
+		assert.Equal(t, clock.Now(), parent.UpdatedAt, "Parent UpdatedAt should match current clock time")
+		assert.Equal(t, clock.Now(), child.UpdatedAt, "Child UpdatedAt should match current clock time")
+		assertValid(t, tl)
+	})
+}

@@ -155,6 +155,61 @@ func TestCompleteCommand_NoConfigError(t *testing.T) {
 	assert.Contains(t, err.Error(), "init must be called first", "error should mention init")
 }
 
+// TestCompleteCommand_Recursive completes a todo and all its descendants
+// This test verifies spec requirement 5.5.3 - Complete recursive tasks from the CLI
+func TestCompleteCommand_Recursive(t *testing.T) {
+	// Use isolated temp directory
+	tmpDir := t.TempDir()
+	todoPath := filepath.Join(tmpDir, "todos.md")
+
+	// Setup config file first
+	setupTestConfig(t, tmpDir)
+
+	// Setup: Create parent task
+	parentOutput, err := runCmd(t, "--config", tmpDir, "--file", todoPath, "add", "Parent Task")
+	require.NoError(t, err, "add command should succeed for parent")
+
+	// Extract ID from "Todo created! ID is <id>" format
+	re := regexp.MustCompile(`ID is ([A-Za-z0-9_-]+)`)
+	parentMatches := re.FindStringSubmatch(parentOutput.String())
+	require.NotEmpty(t, parentMatches, "should find parent ID in output: %s", parentOutput.String())
+	parentID := parentMatches[1]
+
+	// Create child task under parent
+	childOutput, err := runCmd(t, "--config", tmpDir, "--file", todoPath, "add", "--parent", parentID, "Child Task")
+	require.NoError(t, err, "add command should succeed for child")
+
+	childMatches := re.FindStringSubmatch(childOutput.String())
+	require.NotEmpty(t, childMatches, "should find child ID in output: %s", childOutput.String())
+	childID := childMatches[1]
+
+	// Create grandchild under child
+	grandchildOutput, err := runCmd(t, "--config", tmpDir, "--file", todoPath, "add", "--parent", childID, "Grandchild Task")
+	require.NoError(t, err, "add command should succeed for grandchild")
+
+	grandchildMatches := re.FindStringSubmatch(grandchildOutput.String())
+	require.NotEmpty(t, grandchildMatches, "should find grandchild ID in output: %s", grandchildOutput.String())
+	grandchildID := grandchildMatches[1]
+
+	// Execute: Complete parent with recursive flag
+	_, err = runCmd(t, "--config", tmpDir, "--file", todoPath, "complete", "--recursive", parentID)
+	require.NoError(t, err, "recursive complete should succeed")
+
+	// Verify: Check that all todos are completed
+	content, err := os.ReadFile(todoPath)
+	require.NoError(t, err, "should be able to read todo file")
+	contentStr := string(content)
+
+	// Count completed checkboxes
+	completedCount := len(regexp.MustCompile(`\[x\]`).FindAllString(contentStr, -1))
+	assert.Equal(t, 3, completedCount, "all 3 todos should be completed")
+
+	// Verify each specific todo is completed
+	assert.Contains(t, contentStr, parentID, "parent should still exist")
+	assert.Contains(t, contentStr, childID, "child should still exist")
+	assert.Contains(t, contentStr, grandchildID, "grandchild should still exist")
+}
+
 // TestCompleteCommand_AlreadyCompleted tests that completing an already completed todo succeeds (idempotent)
 func TestCompleteCommand_AlreadyCompleted(t *testing.T) {
 	// Use isolated temp directory

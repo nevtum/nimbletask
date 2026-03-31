@@ -147,6 +147,27 @@ func (tl *TodoList) Complete(id string) error {
 	return nil
 }
 
+// CompleteSubtree marks a todo and all its descendants as completed
+func (tl *TodoList) CompleteSubtree(id string) error {
+	todo, err := tl.Get(id)
+	if err != nil {
+		return err
+	}
+
+	// Helper function to complete recursively
+	var completeRecursive func(t *Todo)
+	completeRecursive = func(t *Todo) {
+		t.Completed = true
+		t.UpdatedAt = tl.clock.Now()
+		for _, child := range t.Children {
+			completeRecursive(child)
+		}
+	}
+
+	completeRecursive(todo)
+	return nil
+}
+
 // GetRoots returns all root-level todos
 func (tl *TodoList) GetRoots() []*Todo {
 	return tl.roots

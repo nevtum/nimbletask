@@ -11,15 +11,21 @@ import (
 // CompleteCmd returns a *cobra.Command instance for the complete command
 // Uses global variables configRoot and todoPath
 func CompleteCmd() *cobra.Command {
-	return &cobra.Command{
+	var recursive bool
+
+	cmd := &cobra.Command{
 		Use:   "complete [id]",
 		Short: "Mark a todo item as completed",
-		RunE:  CompleteCmdFunc(),
+		RunE:  CompleteCmdFunc(&recursive),
 	}
+
+	cmd.Flags().BoolVar(&recursive, "recursive", false, "Complete the todo and all its descendants")
+
+	return cmd
 }
 
 // CompleteCmdFunc returns a RunE function for the complete command
-func CompleteCmdFunc() func(cmd *cobra.Command, args []string) error {
+func CompleteCmdFunc(recursive *bool) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		// Manual arg validation - shows usage when args are missing
 		if len(args) != 1 {
@@ -46,9 +52,15 @@ func CompleteCmdFunc() func(cmd *cobra.Command, args []string) error {
 		// Extract todo ID from args
 		todoID := args[0]
 
-		// Mark the todo as complete
-		if err := tl.Complete(todoID); err != nil {
-			return err
+		// Mark the todo as complete (optionally recursive)
+		if *recursive {
+			if err := tl.CompleteSubtree(todoID); err != nil {
+				return err
+			}
+		} else {
+			if err := tl.Complete(todoID); err != nil {
+				return err
+			}
 		}
 
 		if err := tl.Save(); err != nil {
