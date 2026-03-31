@@ -142,8 +142,7 @@ func (tl *TodoList) Complete(id string) error {
 		return err
 	}
 
-	todo.Completed = true
-	todo.UpdatedAt = tl.clock.Now()
+	todo.Complete(tl.clock.Now())
 	return nil
 }
 
@@ -154,17 +153,7 @@ func (tl *TodoList) CompleteSubtree(id string) error {
 		return err
 	}
 
-	// Helper function to complete recursively
-	var completeRecursive func(t *Todo)
-	completeRecursive = func(t *Todo) {
-		t.Completed = true
-		t.UpdatedAt = tl.clock.Now()
-		for _, child := range t.Children {
-			completeRecursive(child)
-		}
-	}
-
-	completeRecursive(todo)
+	todo.CompleteSubtree(tl.clock.Now())
 	return nil
 }
 

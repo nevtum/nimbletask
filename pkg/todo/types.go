@@ -21,6 +21,20 @@ type Todo struct {
 	Tags        []string
 }
 
+// Complete marks the todo as completed and updates the UpdatedAt timestamp
+func (t *Todo) Complete(now time.Time) {
+	t.Completed = true
+	t.UpdatedAt = now
+}
+
+// CompleteSubtree marks the todo and all its children as completed and updates the UpdatedAt timestamp
+func (t *Todo) CompleteSubtree(now time.Time) {
+	t.Complete(now)
+	for _, child := range t.Children {
+		child.CompleteSubtree(now)
+	}
+}
+
 // Serialize converts the Todo and all its children into markdown string representation
 func (t *Todo) Serialize(depth int) string {
 	var sb strings.Builder
