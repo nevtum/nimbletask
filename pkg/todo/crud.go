@@ -2,6 +2,7 @@ package todo
 
 import (
 	"errors"
+	"fmt"
 
 	gonanoid "github.com/matoous/go-nanoid/v2"
 )
@@ -126,6 +127,7 @@ func (tl *TodoList) Delete(id string, force bool) error {
 		for _, child := range todo.Children {
 			child.ParentID = ""
 			tl.roots = append(tl.roots, child)
+			fmt.Printf("Child task %s promoted to root level\n", child.ID)
 		}
 	}
 

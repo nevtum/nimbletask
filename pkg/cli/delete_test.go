@@ -65,7 +65,7 @@ func TestDeleteCommand_MissingArgs(t *testing.T) {
 	_, err := runCmd(t, "--config", tmpDir, "--file", todoPath, "delete")
 
 	assert.Error(t, err, "delete without arguments should error")
-	assert.Contains(t, err.Error(), "accepts 1 arg(s), received 0", "error should mention argument count")
+	assert.Contains(t, err.Error(), "need one todo ID to delete", "error should mention argument count")
 }
 
 // TestDeleteCommand_NoConfigError verifies that delete returns error when config file doesn't exist.

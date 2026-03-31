@@ -29,7 +29,7 @@ its children will be promoted to the root level.`,
 func DeleteCmdFunc() func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
-			return fmt.Errorf("accepts 1 arg(s), received %d", len(args))
+			return fmt.Errorf("received %d args, need one todo ID to delete", len(args))
 		}
 
 		config, err := loadConfig(cmd)
@@ -50,6 +50,8 @@ func DeleteCmdFunc() func(cmd *cobra.Command, args []string) error {
 		if err := tl.Delete(todoID, force); err != nil {
 			return err
 		}
+
+		fmt.Fprintf(cmd.OutOrStdout(), "Deleted todo %s\n", todoID)
 
 		return tl.Save()
 	}
