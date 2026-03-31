@@ -51,8 +51,11 @@ func DeleteCmdFunc() func(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		fmt.Fprintf(cmd.OutOrStdout(), "Deleted todo %s\n", todoID)
+		if err := tl.Save(); err != nil {
+			return err
+		}
 
-		return tl.Save()
+		fmt.Fprintf(cmd.OutOrStdout(), "Deleted todo %s\n", todoID)
+		return nil
 	}
 }

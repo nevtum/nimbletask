@@ -51,6 +51,11 @@ func CompleteCmdFunc() func(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		return tl.Save()
+		if err := tl.Save(); err != nil {
+			return err
+		}
+
+		fmt.Fprintf(cmd.OutOrStdout(), "Completed todo %s\n", todoID)
+		return nil
 	}
 }
