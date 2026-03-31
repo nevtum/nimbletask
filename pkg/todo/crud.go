@@ -98,10 +98,17 @@ func (tl *TodoList) Update(id string, updates TodoUpdate) (*Todo, error) {
 }
 
 // Delete removes a todo from the list
-func (tl *TodoList) Delete(id string) error {
+// If force is false and the todo has children, returns an error
+// If force is true, deletes the todo and promotes its children to root level
+func (tl *TodoList) Delete(id string, force bool) error {
 	todo, err := tl.Get(id)
 	if err != nil {
 		return err
+	}
+
+	// Check if todo has children
+	if len(todo.Children) > 0 && !force {
+		return errors.New("todo has children, use --force to delete anyway")
 	}
 
 	// Remove from parent's children or roots
@@ -114,8 +121,13 @@ func (tl *TodoList) Delete(id string) error {
 		tl.roots = removeFromSlice(tl.roots, todo)
 	}
 
-	// Note: Children are not deleted, they become orphaned
-	// This matches spec behavior - user can clean up separately
+	// If force is true and todo has children, promote them to root level
+	if force {
+		for _, child := range todo.Children {
+			child.ParentID = ""
+			tl.roots = append(tl.roots, child)
+		}
+	}
 
 	// Remove from map
 	delete(tl.todos, id)

@@ -11,11 +11,13 @@ import (
 // DeleteCmd returns a *cobra.Command instance for the delete command
 // Uses global variables configRoot and todoPath
 func DeleteCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "delete [id]",
 		Short: "Delete a todo item from the list",
 		RunE:  DeleteCmdFunc(),
 	}
+	cmd.Flags().Bool("force", false, "Force deletion even if todo has children")
+	return cmd
 }
 
 // DeleteCmdFunc returns a RunE function for the delete command
@@ -38,8 +40,9 @@ func DeleteCmdFunc() func(cmd *cobra.Command, args []string) error {
 		tl, _, _ := loadTodoList(todoPath)
 
 		todoID := args[0]
+		force, _ := cmd.Flags().GetBool("force")
 
-		if err := tl.Delete(todoID); err != nil {
+		if err := tl.Delete(todoID, force); err != nil {
 			return err
 		}
 

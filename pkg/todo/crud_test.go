@@ -204,7 +204,7 @@ func TestDeleteTodo(t *testing.T) {
 		todo, _ := tl.Add("To Delete", "", -1)
 		id := todo.ID
 
-		err := tl.Delete(id)
+		err := tl.Delete(id, false)
 		assert.NoError(t, err, "Delete failed")
 		assert.Len(t, tl.roots, 0, "Expected 0 roots")
 		assert.NotContains(t, tl.todos, id, "Todo still exists in map after deletion")
@@ -216,7 +216,7 @@ func TestDeleteTodo(t *testing.T) {
 		parent, _ := tl.Add("Parent", "", -1)
 		child, _ := tl.Add("Child", parent.ID, -1)
 
-		err := tl.Delete(child.ID)
+		err := tl.Delete(child.ID, false)
 		assert.NoError(t, err, "Delete failed")
 		assert.Len(t, parent.Children, 0, "Expected 0 children")
 		assert.NotContains(t, tl.todos, child.ID, "Child still exists in map after deletion")
@@ -226,8 +226,32 @@ func TestDeleteTodo(t *testing.T) {
 	t.Run("returns error for non-existent todo", func(t *testing.T) {
 		tl := newTestTodoList()
 
-		err := tl.Delete("non-existent")
+		err := tl.Delete("non-existent", false)
 		assert.Error(t, err, "Expected error when deleting non-existent todo")
+	})
+
+	t.Run("returns error when todo has children and force is false", func(t *testing.T) {
+		tl := newTestTodoList()
+		parent, _ := tl.Add("Parent", "", -1)
+		tl.Add("Child", parent.ID, -1)
+
+		err := tl.Delete(parent.ID, false)
+		assert.Error(t, err, "Expected error when deleting todo with children")
+		assert.Contains(t, err.Error(), "children", "Error should mention children")
+	})
+
+	t.Run("deletes todo with children when force is true", func(t *testing.T) {
+		tl := newTestTodoList()
+		parent, _ := tl.Add("Parent", "", -1)
+		child, _ := tl.Add("Child", parent.ID, -1)
+
+		err := tl.Delete(parent.ID, true)
+		assert.NoError(t, err, "Delete with force should succeed")
+		assert.NotContains(t, tl.todos, parent.ID, "Parent should be deleted")
+		assert.Contains(t, tl.todos, child.ID, "Child should still exist")
+		assert.Equal(t, "", child.ParentID, "Child should be promoted to root (empty ParentID)")
+		assert.Contains(t, tl.roots, child, "Child should be in roots")
+		assertValid(t, tl)
 	})
 }
 
