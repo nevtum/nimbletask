@@ -14,9 +14,14 @@ func DeleteCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "delete [id]",
 		Short: "Delete a todo item from the list",
-		RunE:  DeleteCmdFunc(),
+		Long: `Delete a todo item from the list.
+
+By default, todos with children cannot be deleted to prevent accidental
+loss of nested tasks. Use the --force flag to delete a parent todo;
+its children will be promoted to the root level.`,
+		RunE: DeleteCmdFunc(),
 	}
-	cmd.Flags().Bool("force", false, "Force deletion even if todo has children")
+	cmd.Flags().Bool("force", false, "Force deletion even if todo has children (children will be promoted to root)")
 	return cmd
 }
 
