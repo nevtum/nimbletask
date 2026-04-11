@@ -43,14 +43,14 @@ func ListCmdFunc() func(cmd *cobra.Command, args []string) error {
 		}
 
 		// Display todos in numbered format
-		displayTodos(cmd.OutOrStdout(), roots, "")
+		displayTodos(cmd.OutOrStdout(), tl.GetMinIDLength(), roots, "")
 
 		return nil
 	}
 }
 
 // displayTodos recursively displays todos with numbered paths
-func displayTodos(out io.Writer, todos []*todo.Todo, prefix string) {
+func displayTodos(out io.Writer, minIDLength int, todos []*todo.Todo, prefix string) {
 	for i, t := range todos {
 		// Build the number for this todo
 		var number string
@@ -67,13 +67,19 @@ func displayTodos(out io.Writer, todos []*todo.Todo, prefix string) {
 			checkbox = "[x]"
 		}
 
-		// Format: "1. [ ] ID Title"
-		line := fmt.Sprintf("%s %s <id:%s> %s\n", number, checkbox, t.ID, t.Title)
+		// Use the minimum unique ID length for display
+		displayID := t.ID
+		if len(t.ID) > minIDLength {
+			displayID = t.ID[:minIDLength]
+		}
+
+		// Format: "1. [ ] <id:ABC> Title"
+		line := fmt.Sprintf("%s %s <id:%s> %s\n", number, checkbox, displayID, t.Title)
 		out.Write([]byte(line))
 
 		// Recursively display children with updated prefix
 		if len(t.Children) > 0 {
-			displayTodos(out, t.Children, number)
+			displayTodos(out, minIDLength, t.Children, number)
 		}
 	}
 }

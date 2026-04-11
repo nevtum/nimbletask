@@ -6,6 +6,8 @@ import (
 	"time"
 )
 
+const MIN_ID_LENGTH = 2
+
 // Todo represents a single task in the hierarchical todo list
 type Todo struct {
 	ID          string
@@ -97,10 +99,12 @@ func (t *Todo) Serialize(depth int) string {
 
 // TodoList manages a collection of todos with O(1) lookup
 type TodoList struct {
-	todos map[string]*Todo
-	roots []*Todo
-	clock Clock
-	file  AbstractFile
+	todos       map[string]*Todo
+	roots       []*Todo
+	sortedIDs   []string
+	minIDLength int
+	clock       Clock
+	file        AbstractFile
 }
 
 // TodoUpdate represents update fields for a todo
@@ -127,4 +131,9 @@ func NewTodoList(file AbstractFile, options ...Option) *TodoList {
 		opt(tl)
 	}
 	return tl
+}
+
+// GetMinIDLength returns the minimum length required to uniquely identify tasks in the list
+func (tl *TodoList) GetMinIDLength() int {
+	return max(tl.minIDLength, MIN_ID_LENGTH)
 }
