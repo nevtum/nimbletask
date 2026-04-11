@@ -3,6 +3,7 @@ package todo
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	gonanoid "github.com/matoous/go-nanoid/v2"
 )
@@ -61,13 +62,34 @@ func (tl *TodoList) Add(title string, parentID string, position int) (*Todo, err
 	return todo, nil
 }
 
-// Get retrieves a todo by ID
+// Get retrieves a todo by ID, supporting shortened prefix matching
 func (tl *TodoList) Get(id string) (*Todo, error) {
-	todo, exists := tl.todos[id]
-	if !exists {
+	// 1. Try exact match first
+	if todo, exists := tl.todos[id]; exists {
+		return todo, nil
+	}
+
+	// 2. Try prefix matching
+	var matches []*Todo
+	for _, todo := range tl.todos {
+		if strings.HasPrefix(todo.ID, id) {
+			matches = append(matches, todo)
+		}
+	}
+
+	if len(matches) == 0 {
 		return nil, errors.New("todo not found")
 	}
-	return todo, nil
+
+	if len(matches) > 1 {
+		var matchIDs []string
+		for _, m := range matches {
+			matchIDs = append(matchIDs, m.ID)
+		}
+		return nil, fmt.Errorf("ambiguous ID: %s (matches: %s)", id, strings.Join(matchIDs, ", "))
+	}
+
+	return matches[0], nil
 }
 
 // Update modifies a todo's fields
