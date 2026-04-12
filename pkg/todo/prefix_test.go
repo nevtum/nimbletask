@@ -2,14 +2,12 @@ package todo
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestTodoList_GetWithPrefix(t *testing.T) {
-	// Setup test data using existing helper
+func TestTodoList_GetWithPrefixSuccess(t *testing.T) {
 	idx := 0
 	var fakeGenerateID = func() string {
 		idx++
@@ -18,13 +16,10 @@ func TestTodoList_GetWithPrefix(t *testing.T) {
 	tl := newTestTodoList(withIDGenerator(fakeGenerateID))
 
 	t1, err := tl.Add("Task 1", "", -1)
-	if err != nil {
-		t.Fatalf("failed to add task 1: %v", err)
-	}
+	assert.NoError(t, err, "failed to add task 1")
+
 	t2, err := tl.Add("Task 2", "", -1)
-	if err != nil {
-		t.Fatalf("failed to add task 2: %v", err)
-	}
+	assert.NoError(t, err, "failed to add task 2")
 
 	tests := []struct {
 		name          string
@@ -45,6 +40,38 @@ func TestTodoList_GetWithPrefix(t *testing.T) {
 			wantErr:       false,
 			expectedTitle: "Task 2",
 		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tl.Get(tt.prefix)
+			assert.NoError(t, err, "expected no error but got an error")
+			assert.Equal(t, tt.expectedTitle, got.Title)
+		})
+	}
+}
+
+func TestTodoList_GetWithPrefixFailed(t *testing.T) {
+	idx := 0
+	var fakeGenerateID = func() string {
+		idx++
+		return fmt.Sprintf("X%02d-Y", idx)
+	}
+	tl := newTestTodoList(withIDGenerator(fakeGenerateID))
+
+	t1, err := tl.Add("Task 1", "", -1)
+	assert.NoError(t, err, "failed to add task 1")
+
+	_, err = tl.Add("Task 2", "", -1)
+	assert.NoError(t, err, "failed to add task 2")
+
+	tests := []struct {
+		name          string
+		prefix        string
+		wantErr       bool
+		expectedTitle string
+		errContains   string
+	}{
 		{
 			name:        "No match",
 			prefix:      "nonexistent",
@@ -61,20 +88,9 @@ func TestTodoList_GetWithPrefix(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tl.Get(tt.prefix)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Get() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if tt.wantErr {
-				if tt.errContains != "" && !strings.Contains(err.Error(), tt.errContains) {
-					t.Errorf("Get() error = %v, want error containing %q", err, tt.errContains)
-				}
-				return
-			}
-			if got.Title != tt.expectedTitle {
-				t.Errorf("Get() got title = %v, want %v", got.Title, tt.expectedTitle)
-			}
+			_, err := tl.Get(tt.prefix)
+			assert.Error(t, err)
+			assert.ErrorContains(t, err, tt.errContains)
 		})
 	}
 }
@@ -107,11 +123,11 @@ func TestTodoList_GetMinIDLength(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			idx = 0
 			tl := newTestTodoList(withIDGenerator(tt.generator))
 
 			_, err := tl.Add("Task 1", "", -1)
 			assert.NoError(t, err, "failed to add task 1")
+
 			_, err = tl.Add("Task 2", "", -1)
 			assert.NoError(t, err, "failed to add task 2")
 
