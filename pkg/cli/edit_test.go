@@ -58,9 +58,7 @@ func TestEditCommand_UpdatesTitle(t *testing.T) {
 func TestEditCommand_Failed(t *testing.T) {
 	// 1. Setup: Create a temporary directory and a todo file
 	tempDir, err := os.MkdirTemp("", "todo-test-*")
-	if err != nil {
-		t.Fatalf("failed to create temp dir: %v", err)
-	}
+	assert.NoError(t, err)
 	defer os.RemoveAll(tempDir)
 
 	todoFilePath := filepath.Join(tempDir, "test_todo.md")
