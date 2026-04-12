@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestTodoList_GetWithPrefix(t *testing.T) {
@@ -23,8 +25,6 @@ func TestTodoList_GetWithPrefix(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to add task 2: %v", err)
 	}
-
-	// TODO: Add a test for ambiguous IDs
 
 	tests := []struct {
 		name          string
@@ -75,6 +75,48 @@ func TestTodoList_GetWithPrefix(t *testing.T) {
 			if got.Title != tt.expectedTitle {
 				t.Errorf("Get() got title = %v, want %v", got.Title, tt.expectedTitle)
 			}
+		})
+	}
+}
+
+func TestTodoList_GetMinIDLength(t *testing.T) {
+	idx := 0
+
+	tests := []struct {
+		name        string
+		generator   func() string
+		expectedLen int
+	}{
+		{
+			name: "prefix length 7",
+			generator: func() string {
+				idx++
+				return fmt.Sprintf("ABCDE%02d-XYZ", idx)
+			},
+			expectedLen: 7,
+		},
+		{
+			name: "prefix length MIN_ID_LENGTH",
+			generator: func() string {
+				idx++
+				return fmt.Sprintf("%d-XYZ", idx)
+			},
+			expectedLen: MIN_ID_LENGTH,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			idx = 0
+			tl := newTestTodoList(withIDGenerator(tt.generator))
+
+			_, err := tl.Add("Task 1", "", -1)
+			assert.NoError(t, err, "failed to add task 1")
+			_, err = tl.Add("Task 2", "", -1)
+			assert.NoError(t, err, "failed to add task 2")
+
+			length := tl.GetMinIDLength()
+			assert.Equal(t, tt.expectedLen, length, "expected min ID length to be %d", tt.expectedLen)
 		})
 	}
 }
