@@ -7,7 +7,10 @@ import (
 	"time"
 )
 
-const MIN_ID_LENGTH = 2
+const (
+	MIN_ID_LENGTH = 2
+	MAX_ID_LENGTH = 12
+)
 
 // Todo represents a single task in the hierarchical todo list
 type Todo struct {
@@ -137,28 +140,13 @@ func NewTodoList(file AbstractFile, options ...Option) *TodoList {
 func (tl *TodoList) GetMinIDLength() int {
 	sortedIDs := tl.sortedIDs()
 
-	n := 1
-	if len(sortedIDs) > 1 {
-		for n <= 12 {
-			collision := false
-			for i := 0; i < len(sortedIDs)-1; i++ {
-				if len(sortedIDs[i]) >= n && len(sortedIDs[i+1]) >= n {
-					if sortedIDs[i][:n] == sortedIDs[i+1][:n] {
-						collision = true
-						break
-					}
-				}
-			}
-			if !collision {
-				break
-			}
-			n++
-		}
+	n := MIN_ID_LENGTH // Start n with a minimum length
+
+	// Incrementally check for unique prefixes
+	for n <= MAX_ID_LENGTH && hasCollisions(sortedIDs, n) {
+		n++
 	}
 
-	if n < MIN_ID_LENGTH && len(sortedIDs) > 1 {
-		n = MIN_ID_LENGTH
-	}
 	return n
 }
 
@@ -169,4 +157,15 @@ func (tl *TodoList) sortedIDs() []string {
 	}
 	sort.Strings(sortedIDs)
 	return sortedIDs
+}
+
+func hasCollisions(sortedIDs []string, n int) bool {
+	for i := 0; i < len(sortedIDs)-1; i++ {
+		if len(sortedIDs[i]) >= n && len(sortedIDs[i+1]) >= n {
+			if sortedIDs[i][:n] == sortedIDs[i+1][:n] {
+				return true // Collision found
+			}
+		}
+	}
+	return false // No collision
 }
