@@ -70,17 +70,22 @@ func (tl *TodoList) Get(id string) (*Todo, error) {
 		return todo, nil
 	}
 
+	// O(n)
+	sortedIDs := tl.sortedIDs()
+
 	// 2. Try prefix matching using the sorted index
 	// Find the first index where sortedIDs[i] >= id
-	idx := sort.Search(len(tl.sortedIDs), func(i int) bool {
-		return tl.sortedIDs[i] >= id
+	// O(log n)
+	idx := sort.Search(len(sortedIDs), func(i int) bool {
+		return sortedIDs[i] >= id
 	})
 
 	var matches []*Todo
 	// If id is a prefix, all matches must be at or after idx
-	if idx < len(tl.sortedIDs) && strings.HasPrefix(tl.sortedIDs[idx], id) {
-		for i := idx; i < len(tl.sortedIDs) && strings.HasPrefix(tl.sortedIDs[i], id); i++ {
-			matches = append(matches, tl.todos[tl.sortedIDs[i]])
+	// O(n) worst case when idx = 0
+	if idx < len(sortedIDs) && strings.HasPrefix(sortedIDs[idx], id) {
+		for i := idx; i < len(sortedIDs) && strings.HasPrefix(sortedIDs[i], id); i++ {
+			matches = append(matches, tl.todos[sortedIDs[i]])
 		}
 	}
 

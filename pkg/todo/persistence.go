@@ -2,7 +2,6 @@ package todo
 
 import (
 	"fmt"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -30,46 +29,7 @@ func (tl *TodoList) Load() error {
 		return err
 	}
 
-	tl.rebuildIndex()
 	return nil
-}
-
-func (tl *TodoList) rebuildIndex() {
-	if len(tl.todos) == 0 {
-		tl.sortedIDs = []string{}
-		tl.minIDLength = 0
-		return
-	}
-
-	tl.sortedIDs = make([]string, 0, len(tl.todos))
-	for id := range tl.todos {
-		tl.sortedIDs = append(tl.sortedIDs, id)
-	}
-	sort.Strings(tl.sortedIDs)
-
-	n := 1
-	if len(tl.sortedIDs) > 1 {
-		for n <= 12 {
-			collision := false
-			for i := 0; i < len(tl.sortedIDs)-1; i++ {
-				if len(tl.sortedIDs[i]) >= n && len(tl.sortedIDs[i+1]) >= n {
-					if tl.sortedIDs[i][:n] == tl.sortedIDs[i+1][:n] {
-						collision = true
-						break
-					}
-				}
-			}
-			if !collision {
-				break
-			}
-			n++
-		}
-	}
-
-	if n < MIN_ID_LENGTH && len(tl.sortedIDs) > 1 {
-		n = MIN_ID_LENGTH
-	}
-	tl.minIDLength = n
 }
 
 // serialize converts all todos in the list into their markdown string representation

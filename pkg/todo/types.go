@@ -2,6 +2,7 @@ package todo
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 )
@@ -99,12 +100,11 @@ func (t *Todo) Serialize(depth int) string {
 
 // TodoList manages a collection of todos with O(1) lookup
 type TodoList struct {
-	todos       map[string]*Todo
-	roots       []*Todo
-	sortedIDs   []string
-	minIDLength int
-	clock       Clock
-	file        AbstractFile
+	todos map[string]*Todo
+	roots []*Todo
+	// minIDLength int
+	clock Clock
+	file  AbstractFile
 }
 
 // TodoUpdate represents update fields for a todo
@@ -135,5 +135,38 @@ func NewTodoList(file AbstractFile, options ...Option) *TodoList {
 
 // GetMinIDLength returns the minimum length required to uniquely identify tasks in the list
 func (tl *TodoList) GetMinIDLength() int {
-	return max(tl.minIDLength, MIN_ID_LENGTH)
+	sortedIDs := tl.sortedIDs()
+
+	n := 1
+	if len(sortedIDs) > 1 {
+		for n <= 12 {
+			collision := false
+			for i := 0; i < len(sortedIDs)-1; i++ {
+				if len(sortedIDs[i]) >= n && len(sortedIDs[i+1]) >= n {
+					if sortedIDs[i][:n] == sortedIDs[i+1][:n] {
+						collision = true
+						break
+					}
+				}
+			}
+			if !collision {
+				break
+			}
+			n++
+		}
+	}
+
+	if n < MIN_ID_LENGTH && len(sortedIDs) > 1 {
+		n = MIN_ID_LENGTH
+	}
+	return n
+}
+
+func (tl *TodoList) sortedIDs() []string {
+	sortedIDs := make([]string, 0, len(tl.todos))
+	for id := range tl.todos {
+		sortedIDs = append(sortedIDs, id)
+	}
+	sort.Strings(sortedIDs)
+	return sortedIDs
 }
