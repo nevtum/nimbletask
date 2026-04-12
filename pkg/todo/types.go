@@ -5,6 +5,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	gonanoid "github.com/matoous/go-nanoid/v2"
 )
 
 const (
@@ -103,11 +105,11 @@ func (t *Todo) Serialize(depth int) string {
 
 // TodoList manages a collection of todos with O(1) lookup
 type TodoList struct {
-	todos map[string]*Todo
-	roots []*Todo
-	// minIDLength int
-	clock Clock
-	file  AbstractFile
+	todos      map[string]*Todo
+	roots      []*Todo
+	generateID func() string
+	clock      Clock
+	file       AbstractFile
 }
 
 // TodoUpdate represents update fields for a todo
@@ -125,10 +127,11 @@ type Option func(*TodoList)
 // NewTodoList creates a new empty todo list
 func NewTodoList(file AbstractFile, options ...Option) *TodoList {
 	tl := &TodoList{
-		todos: make(map[string]*Todo),
-		roots: []*Todo{},
-		clock: RealClock{},
-		file:  file,
+		todos:      make(map[string]*Todo),
+		roots:      []*Todo{},
+		generateID: generateNanoID,
+		clock:      RealClock{},
+		file:       file,
 	}
 	for _, opt := range options {
 		opt(tl)
@@ -168,4 +171,15 @@ func hasCollisions(sortedIDs []string, n int) bool {
 		}
 	}
 	return false // No collision
+}
+
+// generateNanoID creates a unique ID using NanoID
+func generateNanoID() string {
+	id, err := gonanoid.New()
+	if err != nil {
+		// Panic if NanoID fails
+		// This should be extremely rare
+		panic(err)
+	}
+	return id
 }

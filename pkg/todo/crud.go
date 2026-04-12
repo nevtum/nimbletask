@@ -5,20 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-
-	gonanoid "github.com/matoous/go-nanoid/v2"
 )
-
-// generateID creates a unique ID using NanoID
-func generateID() string {
-	id, err := gonanoid.New()
-	if err != nil {
-		// Panic if NanoID fails
-		// This should be extremely rare
-		panic(err)
-	}
-	return id
-}
 
 // Add creates a new todo and adds it to the list
 func (tl *TodoList) Add(title string, parentID string, position int) (*Todo, error) {
@@ -39,7 +26,7 @@ func (tl *TodoList) Add(title string, parentID string, position int) (*Todo, err
 	// Create the todo
 	now := tl.clock.Now()
 	todo := &Todo{
-		ID:        generateID(),
+		ID:        tl.generateID(),
 		Title:     title,
 		Completed: false,
 		CreatedAt: now,

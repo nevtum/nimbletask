@@ -2,6 +2,13 @@ package todo
 
 // Test helpers using functional options pattern
 
+// withIDGenerator sets the generateID function for the todo list (for testing)
+func withIDGenerator(generateID func() string) Option {
+	return func(tl *TodoList) {
+		tl.generateID = generateID
+	}
+}
+
 // withClock sets the clock for the todo list (for testing)
 func withClock(clock Clock) Option {
 	return func(tl *TodoList) {
