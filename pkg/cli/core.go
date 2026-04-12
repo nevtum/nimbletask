@@ -36,10 +36,11 @@ func NewRootCmd() *cobra.Command {
 	// Add subcommands to root
 	rootCmd.AddCommand(InitCmd())
 	rootCmd.AddCommand(AddCmd())
+	rootCmd.AddCommand(EditCmd())
+	rootCmd.AddCommand(MoveCmd())
 	rootCmd.AddCommand(CompleteCmd())
 	rootCmd.AddCommand(DeleteCmd())
 	rootCmd.AddCommand(ListCmd())
-	rootCmd.AddCommand(MoveCmd())
 
 	return rootCmd
 }
